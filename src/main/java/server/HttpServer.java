@@ -52,5 +52,14 @@ public class HttpServer {
 
     public void stop() {
         serverThread.interrupt();
+        waitTillStop(serverThread);
+    }
+
+    private void waitTillStop(Thread serverThread) {
+        try {
+            serverThread.join();
+        } catch (InterruptedException e) {
+            System.err.println("Interrupted while stopping server.");
+        }
     }
 }

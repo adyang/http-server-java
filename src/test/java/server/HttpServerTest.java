@@ -35,9 +35,8 @@ public class HttpServerTest {
     }
 
     @Test
-    void connect_whenServerIsStopped() throws InterruptedException {
+    void connect_whenServerIsStopped() {
         server.stop();
-        Thread.sleep(20);
 
         assertThatThrownBy(() -> new Socket(HOST, PORT)).isInstanceOf(ConnectException.class);
     }
@@ -57,8 +56,7 @@ public class HttpServerTest {
     }
 
     @AfterEach
-    void tearDown() throws InterruptedException {
+    void tearDown() {
         server.stop();
-        Thread.sleep(20);
     }
 }
