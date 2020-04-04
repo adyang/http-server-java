@@ -15,6 +15,10 @@ public class HttpServer {
     private volatile Thread serverThread;
     private Duration timeout;
 
+    public HttpServer(int port) {
+        this(port, Duration.ofMillis(500));
+    }
+
     public HttpServer(int port, Duration timeout) {
         this.port = port;
         this.timeout = timeout;
@@ -37,11 +41,16 @@ public class HttpServer {
         try (Socket clientSocket = serverSocket.accept();
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
              BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+            drain(in);
             out.print("HTTP/1.1 404 Not Found\r\n");
             out.print("\r\n");
             out.flush();
         } catch (SocketTimeoutException ignore) {
         }
+    }
+
+    private void drain(BufferedReader in) throws IOException {
+        for (int i = 0; i < 2; i++) in.readLine();
     }
 
     private ServerSocket newServerSocket(int port, Duration timeout) throws IOException {
