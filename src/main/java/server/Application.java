@@ -12,7 +12,7 @@ public class Application {
             System.exit(1);
         }
 
-        HttpServer httpServer = new HttpServer(arguments.port);
+        HttpServer httpServer = new HttpServer(arguments.port, arguments.directory);
         httpServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(httpServer::stop));
@@ -22,15 +22,23 @@ public class Application {
         if (!args.contains("-p")) {
             return Arguments.error("Option -p <port> is required");
         }
+        if (!args.contains("-d")) {
+            return Arguments.error("Option -d <serving-directory> is required");
+        }
         Arguments arguments = new Arguments();
         for (int i = 0; i < args.size(); i++) {
-            if ("-p".equals(args.get(i))) {
-                try {
-                    arguments.port = Integer.parseInt(args.get(i + 1));
-                } catch (NumberFormatException e) {
-                    arguments.error = "Invalid port: " + args.get(i + 1);
-                    return arguments;
-                }
+            switch (args.get(i)) {
+                case "-p":
+                    try {
+                        arguments.port = Integer.parseInt(args.get(i + 1));
+                    } catch (NumberFormatException e) {
+                        arguments.error = "Invalid port: " + args.get(i + 1);
+                        return arguments;
+                    }
+                    break;
+                case "-d":
+                    arguments.directory = args.get(i + 1);
+                    break;
             }
         }
         return arguments;
@@ -38,6 +46,7 @@ public class Application {
 
     private static class Arguments {
         Integer port;
+        String directory;
         String error;
 
         static Arguments error(String error) {

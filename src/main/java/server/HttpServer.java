@@ -8,19 +8,25 @@ import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 
 public class HttpServer {
     private final int port;
+    private final Path directory;
     private volatile Thread serverThread;
     private Duration timeout;
 
-    public HttpServer(int port) {
-        this(port, Duration.ofMillis(500));
+    public HttpServer(int port, String directory) {
+        this(port, directory, Duration.ofMillis(500));
     }
 
-    public HttpServer(int port, Duration timeout) {
+    public HttpServer(int port, String directory, Duration timeout) {
         this.port = port;
+        this.directory = Paths.get(directory);
         this.timeout = timeout;
     }
 
@@ -41,12 +47,27 @@ public class HttpServer {
         try (Socket clientSocket = serverSocket.accept();
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
              BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+
+            Request request = parseRequestLine(in.readLine());
             drain(in);
-            out.print("HTTP/1.1 404 Not Found\r\n");
-            out.print("\r\n");
-            out.flush();
+            Path resource = directory.resolve(request.uri.substring(1));
+            if (Files.isRegularFile(resource)) {
+                out.print("HTTP/1.1 200 OK\r\n");
+                out.print("\r\n");
+                out.print(new String(Files.readAllBytes(resource), StandardCharsets.UTF_8));
+                out.flush();
+            } else {
+                out.print("HTTP/1.1 404 Not Found\r\n");
+                out.print("\r\n");
+                out.flush();
+            }
         } catch (SocketTimeoutException ignore) {
         }
+    }
+
+    private Request parseRequestLine(String line) {
+        String[] tokens = line.split(" ");
+        return new Request(tokens[0], tokens[1]);
     }
 
     private void drain(BufferedReader in) throws IOException {
