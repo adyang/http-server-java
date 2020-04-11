@@ -53,4 +53,24 @@ class HandlerTest {
         assertThat(response.body.split(System.lineSeparator()))
                 .containsExactlyInAnyOrder("existing-file", "another-file", ".hidden-file", "directory");
     }
+
+    @Test
+    void head_absentResource() throws IOException {
+        Request request = new Request("HEAD", "/does-not-exists");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(404);
+        assertThat(response.body).isNull();
+    }
+
+    @Test
+    void head_existingResource() throws IOException {
+        Request request = new Request("HEAD", "/existing-file");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.body).isNull();
+    }
 }
