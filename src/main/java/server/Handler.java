@@ -4,18 +4,30 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 public class Handler {
     static Response handle(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         switch (request.method) {
+            case "OPTIONS":
+                return options(resource);
             case "HEAD":
                 return head(resource);
             case "GET":
                 return get(resource);
             default:
                 return new Response(500, null);
+        }
+    }
+
+    private static Response options(Path resource) {
+        if (resource.getFileName().equals(Paths.get("logs"))) {
+            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS"), null);
+        } else {
+            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"), null);
         }
     }
 

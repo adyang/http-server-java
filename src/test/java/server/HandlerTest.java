@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 class HandlerTest {
     @TempDir
@@ -72,5 +73,27 @@ class HandlerTest {
 
         assertThat(response.statusCode).isEqualTo(200);
         assertThat(response.body).isNull();
+    }
+
+    @Test
+    void options_anyResource() throws IOException {
+        Request request = new Request("OPTIONS", "/any-path");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.headers)
+                .containsOnly(entry("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"));
+    }
+
+    @Test
+    void options_logsResource() throws IOException {
+        Request request = new Request("OPTIONS", "/logs");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.headers)
+                .containsOnly(entry("Allow", "GET, HEAD, OPTIONS"));
     }
 }
