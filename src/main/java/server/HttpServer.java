@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.stream.Collectors;
 
 public class HttpServer {
     private final int port;
@@ -55,6 +56,15 @@ public class HttpServer {
                 out.print("HTTP/1.1 200 OK\r\n");
                 out.print("\r\n");
                 out.print(new String(Files.readAllBytes(resource), StandardCharsets.UTF_8));
+                out.flush();
+            } else if (Files.isDirectory(resource)) {
+                String listing = Files.list(resource)
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .collect(Collectors.joining("\r\n", "", "\r\n"));
+                out.print("HTTP/1.1 200 OK\r\n");
+                out.print("\r\n");
+                out.print(listing);
                 out.flush();
             } else {
                 out.print("HTTP/1.1 404 Not Found\r\n");
