@@ -8,12 +8,9 @@ import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.stream.Collectors;
 
 public class HttpServer {
     private final int port;
@@ -48,40 +45,11 @@ public class HttpServer {
         try (Socket clientSocket = serverSocket.accept();
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
              BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-
-            Request request = parseRequestLine(in.readLine());
-            drain(in);
-            Path resource = directory.resolve(request.uri.substring(1));
-            if (Files.isRegularFile(resource)) {
-                out.print("HTTP/1.1 200 OK\r\n");
-                out.print("\r\n");
-                out.print(new String(Files.readAllBytes(resource), StandardCharsets.UTF_8));
-                out.flush();
-            } else if (Files.isDirectory(resource)) {
-                String listing = Files.list(resource)
-                        .map(Path::getFileName)
-                        .map(Path::toString)
-                        .collect(Collectors.joining("\r\n", "", "\r\n"));
-                out.print("HTTP/1.1 200 OK\r\n");
-                out.print("\r\n");
-                out.print(listing);
-                out.flush();
-            } else {
-                out.print("HTTP/1.1 404 Not Found\r\n");
-                out.print("\r\n");
-                out.flush();
-            }
+            Request request = RequestParser.parse(in);
+            Response response = Handler.handle(request, directory);
+            ResponseComposer.compose(out, response);
         } catch (SocketTimeoutException ignore) {
         }
-    }
-
-    private Request parseRequestLine(String line) {
-        String[] tokens = line.split(" ");
-        return new Request(tokens[0], tokens[1]);
-    }
-
-    private void drain(BufferedReader in) throws IOException {
-        for (int i = 0; i < 2; i++) in.readLine();
     }
 
     private ServerSocket newServerSocket(int port, Duration timeout) throws IOException {
