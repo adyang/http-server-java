@@ -22,6 +22,7 @@ class HandlerTest {
         Files.createFile(directory.resolve("another-file"));
         Files.createFile(directory.resolve(".hidden-file"));
         Files.createDirectory(directory.resolve("directory"));
+        Files.createFile(directory.resolve("directory").resolve("inner-file"));
     }
 
     @Test
@@ -45,14 +46,31 @@ class HandlerTest {
     }
 
     @Test
-    void get_directory() throws IOException {
+    void get_rootDirectory() throws IOException {
         Request request = new Request("GET", "/");
 
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body.split(System.lineSeparator()))
-                .containsExactlyInAnyOrder("existing-file", "another-file", ".hidden-file", "directory");
+        assertThat(response.body).contains("<title>Directory: /</title>");
+        assertThat(response.body).contains("<h1>Directory: /</h1>");
+        assertThat(response.body).contains(
+                "<li><a href=\"/existing-file\">existing-file</a></li>",
+                "<li><a href=\"/another-file\">another-file</a></li>",
+                "<li><a href=\"/.hidden-file\">.hidden-file</a></li>",
+                "<li><a href=\"/directory\">directory</a></li>");
+    }
+
+    @Test
+    void get_nonRootDirectory() throws IOException {
+        Request request = new Request("GET", "/directory");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.body).contains("<title>Directory: /directory</title>");
+        assertThat(response.body).contains("<h1>Directory: /directory</h1>");
+        assertThat(response.body).contains("<li><a href=\"/directory/inner-file\">inner-file</a></li>");
     }
 
     @Test
