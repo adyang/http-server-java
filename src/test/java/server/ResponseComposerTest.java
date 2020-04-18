@@ -21,14 +21,14 @@ class ResponseComposerTest {
         assertThat(output.toString())
                 .isEqualTo("HTTP/1.1 200 OK\r\n"
                         + "\r\n"
-                        + "body\r\n");
+                        + "body");
     }
 
     @Test
     void compose_200Ok_noBody() {
         StringWriter output = new StringWriter();
 
-        ResponseComposer.compose(new PrintWriter(output), new Response(200, null));
+        ResponseComposer.compose(new PrintWriter(output), new Response(200, ""));
 
         assertThat(output.toString())
                 .isEqualTo("HTTP/1.1 200 OK\r\n"
@@ -39,10 +39,21 @@ class ResponseComposerTest {
     void compose_404NotFound() {
         StringWriter output = new StringWriter();
 
-        ResponseComposer.compose(new PrintWriter(output), new Response(404, null));
+        ResponseComposer.compose(new PrintWriter(output), new Response(404, ""));
 
         assertThat(output.toString())
                 .isEqualTo("HTTP/1.1 404 Not Found\r\n"
+                        + "\r\n");
+    }
+
+    @Test
+    void compose_400BadRequest() {
+        StringWriter output = new StringWriter();
+
+        ResponseComposer.compose(new PrintWriter(output), new Response(400, ""));
+
+        assertThat(output.toString())
+                .isEqualTo("HTTP/1.1 400 Bad Request\r\n"
                         + "\r\n");
     }
 
@@ -54,7 +65,7 @@ class ResponseComposerTest {
                 new AbstractMap.SimpleImmutableEntry<>("headerTwo", "valueTwo")
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        ResponseComposer.compose(new PrintWriter(output), new Response(200, headers, null));
+        ResponseComposer.compose(new PrintWriter(output), new Response(200, headers, ""));
 
         assertThat(output.toString())
                 .isEqualTo("HTTP/1.1 200 OK\r\n"

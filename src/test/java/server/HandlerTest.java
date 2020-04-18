@@ -1,6 +1,6 @@
 package server;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.entry;
 
 class HandlerTest {
     @TempDir
-    static Path directory;
+    Path directory;
 
-    @BeforeAll
-    static void beforeAll() throws IOException {
+    @BeforeEach
+    void setUp() throws IOException {
         Files.write(directory.resolve("existing-file"), "Hello World!".getBytes(StandardCharsets.UTF_8));
         Files.createFile(directory.resolve("another-file"));
         Files.createFile(directory.resolve(".hidden-file"));
@@ -32,7 +32,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(404);
-        assertThat(response.body).isNull();
+        assertThat(response.body).isEmpty();
     }
 
     @Test
@@ -80,7 +80,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(404);
-        assertThat(response.body).isNull();
+        assertThat(response.body).isEmpty();
     }
 
     @Test
@@ -90,7 +90,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body).isNull();
+        assertThat(response.body).isEmpty();
     }
 
     @Test
@@ -113,5 +113,77 @@ class HandlerTest {
         assertThat(response.statusCode).isEqualTo(200);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS"));
+    }
+
+    @Test
+    void put_absentResource() throws IOException {
+        Request request = new Request("PUT", "/new-file", "lineOne\nlineTwo");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(201);
+        assertThat(Files.readAllLines(directory.resolve("new-file")))
+                .containsExactly("lineOne", "lineTwo");
+    }
+
+    @Test
+    void put_existingResource() throws IOException {
+        Request request = new Request("PUT", "/existing-file", "New Hello World!");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(Files.readAllLines(directory.resolve("existing-file")))
+                .containsExactly("New Hello World!");
+    }
+
+    @Test
+    void put_emptyResource() throws IOException {
+        Request request = new Request("PUT", "/new-file");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(201);
+        assertThat(new String(Files.readAllBytes(directory.resolve("new-file")), StandardCharsets.UTF_8))
+                .isEmpty();
+    }
+
+    @Test
+    void put_existingDirectory() throws IOException {
+        Request request = new Request("PUT", "/directory", "New Hello World!");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(409);
+        assertThat(response.body).isEqualTo("Unable to create/update: directory is a directory.");
+    }
+
+    @Test
+    void delete_existingResource() throws IOException {
+        Request request = new Request("DELETE", "/existing-file");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(Files.exists(directory.resolve("existing-file"))).isFalse();
+    }
+
+    @Test
+    void delete_absentResource() throws IOException {
+        Request request = new Request("DELETE", "/missing-file");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(404);
+    }
+
+    @Test
+    void delete_existingDirectory() throws IOException {
+        Request request = new Request("DELETE", "/directory");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(409);
+        assertThat(response.body).isEqualTo("Unable to delete: directory is a directory.");
     }
 }

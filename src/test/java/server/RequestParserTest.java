@@ -7,10 +7,11 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 class RequestParserTest {
     @Test
-    void parse_getRequest() throws IOException {
+    void parse_requestWithoutBody() throws IOException {
         String input = "GET /existing-file HTTP/1.1\r\n" +
                 "Host: localhost:8080\r\n" +
                 "\r\n";
@@ -20,5 +21,78 @@ class RequestParserTest {
 
         assertThat(request.method).isEqualTo("GET");
         assertThat(request.uri).isEqualTo("/existing-file");
+        assertThat(request.body).isEqualTo("");
+    }
+
+    @Test
+    void parse_requestWithBody() throws IOException {
+        String input = "PUT /existing-file HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Content-Length: 26\r\n" +
+                "\r\n" +
+                "lineOne\n" +
+                "lineTwo\n" +
+                "lineThree\n";
+        BufferedReader in = new BufferedReader(new StringReader(input));
+
+        Request request = RequestParser.parse(in);
+
+        assertThat(request.method).isEqualTo("PUT");
+        assertThat(request.uri).isEqualTo("/existing-file");
+        assertThat(request.body).isEqualTo("lineOne\nlineTwo\nlineThree\n");
+    }
+
+    @Test
+    void parse_requestWithMissingEmptyLineAtEndOfStream() {
+        String input = "PUT /existing-file HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Content-Length: 26\r\n";
+        BufferedReader in = new BufferedReader(new StringReader(input));
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Malformed request: missing blank line after header(s)");
+    }
+
+    @Test
+    void parse_requestWithInvalidContentLength() {
+        String input = "PUT /existing-file HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Content-Length: invalid\r\n";
+        BufferedReader in = new BufferedReader(new StringReader(input));
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Invalid Content-Length: invalid");
+    }
+
+    @Test
+    void parse_requestWithInvalidHeader() {
+        String input = "PUT /existing-file HTTP/1.1\r\n" +
+                "invalidHeader\r\n";
+
+        BufferedReader in = new BufferedReader(new StringReader(input));
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Invalid header: invalidHeader");
+    }
+
+    @Test
+    void parse_requestWithMismatchedContentLength() {
+        String input = "PUT /existing-file HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Content-Length: 20\r\n" +
+                "\r\n" +
+                "lessThanTwenty";
+        BufferedReader in = new BufferedReader(new StringReader(input));
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Content-Length mismatched: body is not 20 byte(s)");
     }
 }

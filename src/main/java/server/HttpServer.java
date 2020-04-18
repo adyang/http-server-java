@@ -45,10 +45,18 @@ public class HttpServer {
         try (Socket clientSocket = serverSocket.accept();
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
              BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+            handleConnection(in, out);
+        } catch (SocketTimeoutException ignore) {
+        }
+    }
+
+    private void handleConnection(BufferedReader in, PrintWriter out) throws IOException {
+        try {
             Request request = RequestParser.parse(in);
             Response response = Handler.handle(request, directory);
             ResponseComposer.compose(out, response);
-        } catch (SocketTimeoutException ignore) {
+        } catch (RequestParser.ParseException e) {
+            ResponseComposer.compose(out, new Response(400, e.getMessage() + System.lineSeparator()));
         }
     }
 

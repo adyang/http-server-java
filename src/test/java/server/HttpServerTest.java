@@ -69,6 +69,21 @@ public class HttpServerTest {
         }
     }
 
+    @Test
+    void invalidRequest_parseException() throws IOException {
+        try (Socket socket = new Socket(HOST, PORT);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            out.printf("GET /existing-file HTTP/1.1\r\n");
+            out.printf("Host: %s:%s\r\n", HOST, PORT);
+            out.printf("invalid\r\n");
+
+            assertThat(in.readLine()).isEqualTo("HTTP/1.1 400 Bad Request");
+            assertThat(in.readLine()).isEqualTo("");
+            assertThat(in.readLine()).contains("Invalid header");
+        }
+    }
+
     @AfterEach
     void tearDown() {
         server.stop();

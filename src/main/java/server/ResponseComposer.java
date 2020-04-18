@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 public class ResponseComposer {
     private static final Map<Integer, String> REASON_PHRASES = Stream.of(
             new AbstractMap.SimpleImmutableEntry<>(200, "OK"),
+            new AbstractMap.SimpleImmutableEntry<>(400, "Bad Request"),
             new AbstractMap.SimpleImmutableEntry<>(404, "Not Found")
     ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -31,6 +32,6 @@ public class ResponseComposer {
     }
 
     private static void writeBody(PrintWriter out, Response response) {
-        if (response.body != null) out.printf("%s\r\n", response.body);
+        out.printf("%s", response.body);
     }
 }

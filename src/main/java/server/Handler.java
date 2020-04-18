@@ -23,8 +23,12 @@ public class Handler {
                 return head(resource);
             case "GET":
                 return get(request, directory);
+            case "PUT":
+                return put(request, directory);
+            case "DELETE":
+                return delete(request, directory);
             default:
-                return new Response(500, null);
+                return new Response(500, "");
         }
     }
 
@@ -38,9 +42,9 @@ public class Handler {
 
     private static Response head(Path resource) {
         if (Files.exists(resource)) {
-            return new Response(200, null);
+            return new Response(200, "");
         } else {
-            return new Response(404, null);
+            return new Response(404, "");
         }
     }
 
@@ -56,7 +60,7 @@ public class Handler {
             String directoryTemplate = slurp("/directory.html");
             return new Response(200, String.format(directoryTemplate, request.uri, listing));
         } else {
-            return new Response(404, null);
+            return new Response(404, "");
         }
     }
 
@@ -71,6 +75,37 @@ public class Handler {
             int length;
             while ((length = in.read(buffer)) != EOF) out.write(buffer, 0, length);
             return out.toString(StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static Response put(Request request, Path directory) {
+        Path resource = directory.resolve(request.uri.substring(1));
+        if (Files.isRegularFile(resource)) {
+            write(resource, request.body);
+            return new Response(200, request.body);
+        } else if (Files.notExists(resource)) {
+            write(resource, request.body);
+            return new Response(201, request.body);
+        } else {
+            return new Response(409, "Unable to create/update: " + resource.getFileName() + " is a directory.");
+        }
+    }
+
+    private static Response delete(Request request, Path directory) throws IOException {
+        Path resource = directory.resolve(request.uri.substring(1));
+        if (Files.isDirectory(resource)) {
+            return new Response(409, "Unable to delete: " + resource.getFileName() + " is a directory.");
+        } else {
+            boolean deleted = Files.deleteIfExists(resource);
+            return new Response(deleted ? 200 : 404, null);
+        }
+    }
+
+    private static Path write(Path resource, String content) {
+        try {
+            return Files.write(resource, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
