@@ -5,14 +5,14 @@ import java.util.Map;
 
 public class Response {
     public final int statusCode;
-    public final String body;
-    public final Map<String, String> headers;
+    public final Object body;
+    public final Map<String, Object> headers;
 
-    public Response(int statusCode, String body) {
+    public Response(int statusCode, Object body) {
         this(statusCode, Collections.emptyMap(), body);
     }
 
-    public Response(int statusCode, Map<String, String> headers, String body) {
+    public Response(int statusCode, Map<String, Object> headers, Object body) {
         this.statusCode = statusCode;
         this.body = body;
         this.headers = headers;

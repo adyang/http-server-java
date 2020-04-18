@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Handler {
@@ -40,9 +41,10 @@ public class Handler {
         }
     }
 
-    private static Response head(Path resource) {
+    private static Response head(Path resource) throws IOException {
         if (Files.exists(resource)) {
-            return new Response(200, "");
+            Map<String, Object> headers = Collections.singletonMap("Content-Length", Files.size(resource));
+            return new Response(200, headers, "");
         } else {
             return new Response(404, "");
         }
@@ -51,14 +53,17 @@ public class Handler {
     private static Response get(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         if (Files.isRegularFile(resource)) {
-            return new Response(200, new String(Files.readAllBytes(resource), StandardCharsets.UTF_8));
+            Map<String, Object> headers = Collections.singletonMap("Content-Length", Files.size(resource));
+            return new Response(200, headers, Files.readAllBytes(resource));
         } else if (Files.isDirectory(resource)) {
             String listing = Files.list(resource)
                     .map(Path::getFileName)
                     .map(f -> String.format("<li><a href=\"%s\">%s</a></li>", linkOf(request.uri, f), f))
                     .collect(Collectors.joining());
             String directoryTemplate = slurp("/directory.html");
-            return new Response(200, String.format(directoryTemplate, request.uri, listing));
+            String directoryListing = String.format(directoryTemplate, request.uri, listing);
+            Map<String, Object> headers = Collections.singletonMap("Content-Length", directoryListing.length());
+            return new Response(200, headers, directoryListing);
         } else {
             return new Response(404, "");
         }

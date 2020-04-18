@@ -64,6 +64,7 @@ public class HttpServerTest {
             out.printf("\r\n");
 
             assertThat(in.readLine()).isEqualTo("HTTP/1.1 200 OK");
+            assertThat(in.readLine()).isEqualTo("Content-Length: 12");
             assertThat(in.readLine()).isEqualTo("");
             assertThat(in.readLine()).isEqualTo("Hello World!");
         }

@@ -3,11 +3,12 @@ package server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -43,14 +44,14 @@ public class HttpServer {
 
     private void waitOrHandleConnection(ServerSocket serverSocket) throws IOException {
         try (Socket clientSocket = serverSocket.accept();
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
-             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+             PrintStream out = new PrintStream(clientSocket.getOutputStream(), false, StandardCharsets.UTF_8.name());
+             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8))) {
             handleConnection(in, out);
         } catch (SocketTimeoutException ignore) {
         }
     }
 
-    private void handleConnection(BufferedReader in, PrintWriter out) throws IOException {
+    private void handleConnection(BufferedReader in, PrintStream out) throws IOException {
         try {
             Request request = RequestParser.parse(in);
             Response response = Handler.handle(request, directory);

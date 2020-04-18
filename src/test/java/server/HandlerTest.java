@@ -32,7 +32,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(404);
-        assertThat(response.body).isEmpty();
+        assertThat(response.body).isEqualTo("");
     }
 
     @Test
@@ -42,7 +42,8 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body).isEqualTo("Hello World!");
+        assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
+        assertThat(response.body).isEqualTo("Hello World!".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -52,13 +53,15 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body).contains("<title>Directory: /</title>");
-        assertThat(response.body).contains("<h1>Directory: /</h1>");
-        assertThat(response.body).contains(
-                "<li><a href=\"/existing-file\">existing-file</a></li>",
-                "<li><a href=\"/another-file\">another-file</a></li>",
-                "<li><a href=\"/.hidden-file\">.hidden-file</a></li>",
-                "<li><a href=\"/directory\">directory</a></li>");
+        assertThat(response.headers).containsOnlyKeys("Content-Length");
+        assertThat((String) response.body)
+                .contains("<title>Directory: /</title>")
+                .contains("<h1>Directory: /</h1>")
+                .contains(
+                        "<li><a href=\"/existing-file\">existing-file</a></li>",
+                        "<li><a href=\"/another-file\">another-file</a></li>",
+                        "<li><a href=\"/.hidden-file\">.hidden-file</a></li>",
+                        "<li><a href=\"/directory\">directory</a></li>");
     }
 
     @Test
@@ -68,9 +71,10 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body).contains("<title>Directory: /directory</title>");
-        assertThat(response.body).contains("<h1>Directory: /directory</h1>");
-        assertThat(response.body).contains("<li><a href=\"/directory/inner-file\">inner-file</a></li>");
+        assertThat((String) response.body)
+                .contains("<title>Directory: /directory</title>")
+                .contains("<h1>Directory: /directory</h1>")
+                .contains("<li><a href=\"/directory/inner-file\">inner-file</a></li>");
     }
 
     @Test
@@ -80,7 +84,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(404);
-        assertThat(response.body).isEmpty();
+        assertThat(response.body).isEqualTo("");
     }
 
     @Test
@@ -90,7 +94,8 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body).isEmpty();
+        assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
+        assertThat(response.body).isEqualTo("");
     }
 
     @Test
@@ -102,7 +107,7 @@ class HandlerTest {
         assertThat(response.statusCode).isEqualTo(200);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"));
-        assertThat(response.body).isEmpty();
+        assertThat(response.body).isEqualTo("");
     }
 
     @Test
@@ -114,7 +119,7 @@ class HandlerTest {
         assertThat(response.statusCode).isEqualTo(200);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS"));
-        assertThat(response.body).isEmpty();
+        assertThat(response.body).isEqualTo("");
     }
 
     @Test
@@ -167,7 +172,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.body).isEmpty();
+        assertThat(response.body).isEqualTo("");
         assertThat(Files.exists(directory.resolve("existing-file"))).isFalse();
     }
 
