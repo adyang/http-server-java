@@ -102,6 +102,7 @@ class HandlerTest {
         assertThat(response.statusCode).isEqualTo(200);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"));
+        assertThat(response.body).isEmpty();
     }
 
     @Test
@@ -113,6 +114,7 @@ class HandlerTest {
         assertThat(response.statusCode).isEqualTo(200);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS"));
+        assertThat(response.body).isEmpty();
     }
 
     @Test
@@ -165,6 +167,7 @@ class HandlerTest {
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.body).isEmpty();
         assertThat(Files.exists(directory.resolve("existing-file"))).isFalse();
     }
 

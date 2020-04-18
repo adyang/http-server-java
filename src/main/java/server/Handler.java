@@ -34,9 +34,9 @@ public class Handler {
 
     private static Response options(Path resource) {
         if (resource.getFileName().equals(Paths.get("logs"))) {
-            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS"), null);
+            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS"), "");
         } else {
-            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"), null);
+            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"), "");
         }
     }
 
@@ -99,7 +99,7 @@ public class Handler {
             return new Response(409, "Unable to delete: " + resource.getFileName() + " is a directory.");
         } else {
             boolean deleted = Files.deleteIfExists(resource);
-            return new Response(deleted ? 200 : 404, null);
+            return new Response(deleted ? 200 : 404, "");
         }
     }
 
