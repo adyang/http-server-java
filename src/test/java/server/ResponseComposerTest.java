@@ -1,6 +1,8 @@
 package server;
 
 import org.junit.jupiter.api.Test;
+import server.data.Response;
+import server.data.Status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

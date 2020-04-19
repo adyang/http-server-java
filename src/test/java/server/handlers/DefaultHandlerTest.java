@@ -1,8 +1,13 @@
-package server;
+package server.handlers;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import server.Handler;
+import server.data.Method;
+import server.data.Request;
+import server.data.Response;
+import server.data.Status;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

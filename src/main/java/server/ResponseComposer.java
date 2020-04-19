@@ -1,5 +1,7 @@
 package server;
 
+import server.data.Response;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;

@@ -1,12 +1,18 @@
 package server;
 
+import server.data.Method;
+import server.data.Request;
+
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RequestParser {
     static Request parse(BufferedReader in) throws IOException {
         Request request = parseRequestLine(in.readLine());
-        int contentLength = parseContentLength(in);
+        request.headers = parseHeaders(in);
+        int contentLength = parseContentLength(request.headers);
         request.body = parseBody(in, contentLength);
         return request;
     }
@@ -14,7 +20,6 @@ public class RequestParser {
     private static Request parseRequestLine(String line) {
         String[] tokens = line.split(" ");
         return new Request(parseMethod(tokens[0]), tokens[1]);
-
     }
 
     private static Method parseMethod(String methodToken) {
@@ -25,24 +30,24 @@ public class RequestParser {
         }
     }
 
-    private static int parseContentLength(BufferedReader in) throws IOException {
-        int contentLength = 0;
+    private static Map<String, String> parseHeaders(BufferedReader in) throws IOException {
+        Map<String, String> headers = new HashMap<>();
         String line;
         while ((line = in.readLine()) != null && !line.isEmpty()) {
             String[] header = line.split(":", 2);
             if (header.length != 2) throw new ParseException("Invalid header: " + line);
-            if ("Content-Length".equals(header[0]))
-                contentLength = parseContentLengthInt(header[1]);
+            headers.put(header[0], header[1].trim());
         }
         if (line == null) throw new ParseException("Malformed request: missing blank line after header(s)");
-        return contentLength;
+        return headers;
     }
 
-    private static int parseContentLengthInt(String contentLength) {
+    private static int parseContentLength(Map<String, String> headers) {
+        String contentLength = headers.getOrDefault("Content-Length", "0");
         try {
-            return Integer.parseInt(contentLength.trim());
+            return Integer.parseInt(contentLength);
         } catch (NumberFormatException e) {
-            throw new ParseException("Invalid Content-Length: " + contentLength.trim());
+            throw new ParseException("Invalid Content-Length: " + contentLength);
         }
     }
 

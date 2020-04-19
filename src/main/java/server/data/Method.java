@@ -1,4 +1,4 @@
-package server;
+package server.data;
 
 public enum Method {
     OPTIONS,

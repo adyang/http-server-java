@@ -1,13 +1,14 @@
 package server;
 
 import org.junit.jupiter.api.Test;
+import server.data.Method;
+import server.data.Request;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.Assertions.*;
 
 class RequestParserTest {
     @Test
@@ -39,6 +40,10 @@ class RequestParserTest {
 
         assertThat(request.method).isEqualTo(Method.PUT);
         assertThat(request.uri).isEqualTo("/existing-file");
+        assertThat(request.headers).containsOnly(
+                entry("Host", "localhost:8080"),
+                entry("Content-Length", "26")
+        );
         assertThat(request.body).isEqualTo("lineOne\nlineTwo\nlineThree\n");
     }
 
@@ -72,7 +77,8 @@ class RequestParserTest {
     void parse_requestWithInvalidContentLength() {
         String input = "PUT /existing-file HTTP/1.1\r\n" +
                 "Host: localhost:8080\r\n" +
-                "Content-Length: invalid\r\n";
+                "Content-Length: invalid\r\n" +
+                "\r\n";
         BufferedReader in = new BufferedReader(new StringReader(input));
 
         Throwable error = catchThrowable(() -> RequestParser.parse(in));

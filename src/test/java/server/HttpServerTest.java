@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import server.handlers.DefaultHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,8 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -39,7 +38,6 @@ public class HttpServerTest {
     @BeforeEach
     void setUp() {
         Handler appHandler = new DefaultHandler(directory);
-        appHandler = new MethodAuthoriser(appHandler, emptyMap(), asList(Method.GET, Method.OPTIONS, Method.HEAD));
         server = new HttpServer(PORT, appHandler, Duration.ofMillis(10));
         server.start();
     }
@@ -71,21 +69,6 @@ public class HttpServerTest {
             assertThat(in.readLine()).isEqualTo("Content-Length: 12");
             assertThat(in.readLine()).isEqualTo("");
             assertThat(in.readLine()).isEqualTo("Hello World!");
-        }
-    }
-
-    @Test
-    void notAllowedMethodRequest() throws IOException {
-        try (Socket socket = new Socket(HOST, PORT);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            out.printf("POST /existing-file HTTP/1.1\r\n");
-            out.printf("Host: %s:%s\r\n", HOST, PORT);
-            out.printf("\r\n");
-
-            assertThat(in.readLine()).isEqualTo("HTTP/1.1 405 Method Not Allowed");
-            assertThat(in.readLine()).isEqualTo("Allow: GET, OPTIONS, HEAD");
-            assertThat(in.readLine()).isEqualTo("");
         }
     }
 

@@ -1,4 +1,9 @@
-package server;
+package server.handlers;
+
+import server.Handler;
+import server.data.Request;
+import server.data.Response;
+import server.data.Status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
