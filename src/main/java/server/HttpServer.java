@@ -57,7 +57,7 @@ public class HttpServer {
             Response response = Handler.handle(request, directory);
             ResponseComposer.compose(out, response);
         } catch (RequestParser.ParseException e) {
-            ResponseComposer.compose(out, new Response(400, e.getMessage() + System.lineSeparator()));
+            ResponseComposer.compose(out, new Response(Status.BAD_REQUEST, e.getMessage() + System.lineSeparator()));
         }
     }
 

@@ -31,24 +31,24 @@ public class Handler {
             case DELETE:
                 return delete(request, directory);
             default:
-                return new Response(500, "");
+                return new Response(Status.INTERNAL_SERVER_ERROR, "");
         }
     }
 
     private static Response options(Path resource) {
         if (resource.getFileName().equals(Paths.get("logs"))) {
-            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS"), "");
+            return new Response(Status.OK, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS"), "");
         } else {
-            return new Response(200, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"), "");
+            return new Response(Status.OK, Collections.singletonMap("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"), "");
         }
     }
 
     private static Response head(Path resource) throws IOException {
         if (Files.exists(resource)) {
             Map<String, Object> headers = Collections.singletonMap("Content-Length", Files.size(resource));
-            return new Response(200, headers, "");
+            return new Response(Status.OK, headers, "");
         } else {
-            return new Response(404, "");
+            return new Response(Status.NOT_FOUND, "");
         }
     }
 
@@ -59,7 +59,7 @@ public class Handler {
             headers.put("Content-Length", Files.size(resource));
             String contentType = URLConnection.guessContentTypeFromName(resource.getFileName().toString());
             if (contentType != null) headers.put("Content-Type", contentType);
-            return new Response(200, headers, Files.readAllBytes(resource));
+            return new Response(Status.OK, headers, Files.readAllBytes(resource));
         } else if (Files.isDirectory(resource)) {
             String listing = Files.list(resource)
                     .map(Path::getFileName)
@@ -70,9 +70,9 @@ public class Handler {
             Map<String, Object> headers = new HashMap<>();
             headers.put("Content-Length", directoryListing.length());
             headers.put("Content-Type", "text/html");
-            return new Response(200, headers, directoryListing);
+            return new Response(Status.OK, headers, directoryListing);
         } else {
-            return new Response(404, "");
+            return new Response(Status.NOT_FOUND, "");
         }
     }
 
@@ -96,22 +96,22 @@ public class Handler {
         Path resource = directory.resolve(request.uri.substring(1));
         if (Files.isRegularFile(resource)) {
             write(resource, request.body);
-            return new Response(200, request.body);
+            return new Response(Status.OK, request.body);
         } else if (Files.notExists(resource)) {
             write(resource, request.body);
-            return new Response(201, request.body);
+            return new Response(Status.CREATED, request.body);
         } else {
-            return new Response(409, "Unable to create/update: " + resource.getFileName() + " is a directory.");
+            return new Response(Status.CONFLICT, "Unable to create/update: " + resource.getFileName() + " is a directory.");
         }
     }
 
     private static Response delete(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         if (Files.isDirectory(resource)) {
-            return new Response(409, "Unable to delete: " + resource.getFileName() + " is a directory.");
+            return new Response(Status.CONFLICT, "Unable to delete: " + resource.getFileName() + " is a directory.");
         } else {
             boolean deleted = Files.deleteIfExists(resource);
-            return new Response(deleted ? 200 : 404, "");
+            return new Response(deleted ? Status.OK : Status.NOT_FOUND, "");
         }
     }
 

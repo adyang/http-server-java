@@ -3,18 +3,9 @@ package server;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.util.AbstractMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ResponseComposer {
-    private static final Map<Integer, String> REASON_PHRASES = Stream.of(
-            new AbstractMap.SimpleImmutableEntry<>(200, "OK"),
-            new AbstractMap.SimpleImmutableEntry<>(400, "Bad Request"),
-            new AbstractMap.SimpleImmutableEntry<>(404, "Not Found")
-    ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
     static void compose(PrintStream out, Response response) {
         writeStatusLine(out, response);
         writeHeaders(out, response);
@@ -24,7 +15,7 @@ public class ResponseComposer {
     }
 
     private static void writeStatusLine(PrintStream out, Response response) {
-        out.printf("HTTP/1.1 %d %s\r\n", response.statusCode, REASON_PHRASES.get(response.statusCode));
+        out.printf("HTTP/1.1 %d %s\r\n", response.status.code, response.status.reason);
     }
 
     private static void writeHeaders(PrintStream out, Response response) {

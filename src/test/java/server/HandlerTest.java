@@ -31,7 +31,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(404);
+        assertThat(response.status).isEqualTo(Status.NOT_FOUND);
         assertThat(response.body).isEqualTo("");
     }
 
@@ -41,7 +41,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
         assertThat(response.body).isEqualTo("Hello World!".getBytes(StandardCharsets.UTF_8));
     }
@@ -53,7 +53,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "image/jpeg");
     }
 
@@ -64,7 +64,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "image/png");
     }
 
@@ -75,7 +75,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "image/gif");
     }
 
@@ -86,7 +86,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "text/plain");
     }
 
@@ -96,7 +96,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsKeys("Content-Length");
         assertThat(response.headers).containsEntry("Content-Type", "text/html");
         assertThat((String) response.body)
@@ -115,7 +115,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat((String) response.body)
                 .contains("<title>Directory: /directory</title>")
                 .contains("<h1>Directory: /directory</h1>")
@@ -128,7 +128,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(404);
+        assertThat(response.status).isEqualTo(Status.NOT_FOUND);
         assertThat(response.body).isEqualTo("");
     }
 
@@ -138,7 +138,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
         assertThat(response.body).isEqualTo("");
     }
@@ -149,7 +149,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"));
         assertThat(response.body).isEqualTo("");
@@ -161,7 +161,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers)
                 .containsOnly(entry("Allow", "GET, HEAD, OPTIONS"));
         assertThat(response.body).isEqualTo("");
@@ -173,7 +173,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(201);
+        assertThat(response.status).isEqualTo(Status.CREATED);
         assertThat(Files.readAllLines(directory.resolve("new-file")))
                 .containsExactly("lineOne", "lineTwo");
     }
@@ -184,7 +184,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(Files.readAllLines(directory.resolve("existing-file")))
                 .containsExactly("New Hello World!");
     }
@@ -195,7 +195,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(201);
+        assertThat(response.status).isEqualTo(Status.CREATED);
         assertThat(new String(Files.readAllBytes(directory.resolve("new-file")), StandardCharsets.UTF_8))
                 .isEmpty();
     }
@@ -206,7 +206,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(409);
+        assertThat(response.status).isEqualTo(Status.CONFLICT);
         assertThat(response.body).isEqualTo("Unable to create/update: directory is a directory.");
     }
 
@@ -216,7 +216,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.body).isEqualTo("");
         assertThat(Files.exists(directory.resolve("existing-file"))).isFalse();
     }
@@ -227,7 +227,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(404);
+        assertThat(response.status).isEqualTo(Status.NOT_FOUND);
     }
 
     @Test
@@ -236,7 +236,7 @@ class HandlerTest {
 
         Response response = Handler.handle(request, directory);
 
-        assertThat(response.statusCode).isEqualTo(409);
+        assertThat(response.status).isEqualTo(Status.CONFLICT);
         assertThat(response.body).isEqualTo("Unable to delete: directory is a directory.");
     }
 }
