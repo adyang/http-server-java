@@ -21,7 +21,7 @@ public class RequestParser {
         try {
             return Method.valueOf(methodToken);
         } catch (IllegalArgumentException e) {
-            throw new ParseException("Invalid method: " + methodToken);
+            throw new InvalidMethodException("Invalid method: " + methodToken);
         }
     }
 
@@ -57,6 +57,12 @@ public class RequestParser {
 
     public static class ParseException extends RuntimeException {
         public ParseException(String message) {
+            super(message);
+        }
+    }
+
+    public static class InvalidMethodException extends RuntimeException {
+        public InvalidMethodException(String message) {
             super(message);
         }
     }

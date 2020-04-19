@@ -9,23 +9,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 
 public class HttpServer {
     private final int port;
-    private final Path directory;
+    private final Handler handler;
+    private final Duration timeout;
     private volatile Thread serverThread;
-    private Duration timeout;
 
-    public HttpServer(int port, String directory) {
-        this(port, directory, Duration.ofMillis(500));
+    public HttpServer(int port, Handler handler) {
+        this(port, handler, Duration.ofMillis(500));
     }
 
-    public HttpServer(int port, String directory, Duration timeout) {
+    public HttpServer(int port, Handler handler, Duration timeout) {
         this.port = port;
-        this.directory = Paths.get(directory);
+        this.handler = handler;
         this.timeout = timeout;
     }
 
@@ -54,10 +52,12 @@ public class HttpServer {
     private void handleConnection(BufferedReader in, PrintStream out) throws IOException {
         try {
             Request request = RequestParser.parse(in);
-            Response response = Handler.handle(request, directory);
+            Response response = handler.handle(request);
             ResponseComposer.compose(out, response);
         } catch (RequestParser.ParseException e) {
             ResponseComposer.compose(out, new Response(Status.BAD_REQUEST, e.getMessage() + System.lineSeparator()));
+        } catch (RequestParser.InvalidMethodException e) {
+            ResponseComposer.compose(out, new Response(Status.NOT_IMPLEMENTED, e.getMessage() + System.lineSeparator()));
         }
     }
 

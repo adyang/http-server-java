@@ -12,9 +12,10 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-class HandlerTest {
+class DefaultHandlerTest {
     @TempDir
     Path directory;
+    private Handler handler;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -23,13 +24,15 @@ class HandlerTest {
         Files.createFile(directory.resolve(".hidden-file"));
         Files.createDirectory(directory.resolve("directory"));
         Files.createFile(directory.resolve("directory").resolve("inner-file"));
+
+        handler = new DefaultHandler(directory);
     }
 
     @Test
     void get_absentResource() throws IOException {
         Request request = new Request(Method.GET, "/does-not-exists");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.NOT_FOUND);
         assertThat(response.body).isEqualTo("");
@@ -39,7 +42,7 @@ class HandlerTest {
     void get_existingResource() throws IOException {
         Request request = new Request(Method.GET, "/existing-file");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
@@ -51,7 +54,7 @@ class HandlerTest {
         Files.createFile(directory.resolve("image.jpeg"));
         Request request = new Request(Method.GET, "/image.jpeg");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "image/jpeg");
@@ -62,7 +65,7 @@ class HandlerTest {
         Files.createFile(directory.resolve("image.png"));
         Request request = new Request(Method.GET, "/image.png");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "image/png");
@@ -73,7 +76,7 @@ class HandlerTest {
         Files.createFile(directory.resolve("image.gif"));
         Request request = new Request(Method.GET, "/image.gif");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "image/gif");
@@ -84,7 +87,7 @@ class HandlerTest {
         Files.createFile(directory.resolve("file.txt"));
         Request request = new Request(Method.GET, "/file.txt");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsEntry("Content-Type", "text/plain");
@@ -94,7 +97,7 @@ class HandlerTest {
     void get_rootDirectory() throws IOException {
         Request request = new Request(Method.GET, "/");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsKeys("Content-Length");
@@ -113,7 +116,7 @@ class HandlerTest {
     void get_nonRootDirectory() throws IOException {
         Request request = new Request(Method.GET, "/directory");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat((String) response.body)
@@ -126,7 +129,7 @@ class HandlerTest {
     void head_absentResource() throws IOException {
         Request request = new Request(Method.HEAD, "/does-not-exists");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.NOT_FOUND);
         assertThat(response.body).isEqualTo("");
@@ -136,7 +139,7 @@ class HandlerTest {
     void head_existingResource() throws IOException {
         Request request = new Request(Method.HEAD, "/existing-file");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
@@ -144,34 +147,10 @@ class HandlerTest {
     }
 
     @Test
-    void options_anyResource() throws IOException {
-        Request request = new Request(Method.OPTIONS, "/any-path");
-
-        Response response = Handler.handle(request, directory);
-
-        assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers)
-                .containsOnly(entry("Allow", "GET, HEAD, OPTIONS, PUT, DELETE"));
-        assertThat(response.body).isEqualTo("");
-    }
-
-    @Test
-    void options_logsResource() throws IOException {
-        Request request = new Request(Method.OPTIONS, "/logs");
-
-        Response response = Handler.handle(request, directory);
-
-        assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers)
-                .containsOnly(entry("Allow", "GET, HEAD, OPTIONS"));
-        assertThat(response.body).isEqualTo("");
-    }
-
-    @Test
     void put_absentResource() throws IOException {
         Request request = new Request(Method.PUT, "/new-file", "lineOne\nlineTwo");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.CREATED);
         assertThat(Files.readAllLines(directory.resolve("new-file")))
@@ -182,7 +161,7 @@ class HandlerTest {
     void put_existingResource() throws IOException {
         Request request = new Request(Method.PUT, "/existing-file", "New Hello World!");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(Files.readAllLines(directory.resolve("existing-file")))
@@ -193,7 +172,7 @@ class HandlerTest {
     void put_emptyResource() throws IOException {
         Request request = new Request(Method.PUT, "/new-file");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.CREATED);
         assertThat(new String(Files.readAllBytes(directory.resolve("new-file")), StandardCharsets.UTF_8))
@@ -204,7 +183,7 @@ class HandlerTest {
     void put_existingDirectory() throws IOException {
         Request request = new Request(Method.PUT, "/directory", "New Hello World!");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.CONFLICT);
         assertThat(response.body).isEqualTo("Unable to create/update: directory is a directory.");
@@ -214,7 +193,7 @@ class HandlerTest {
     void delete_existingResource() throws IOException {
         Request request = new Request(Method.DELETE, "/existing-file");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.body).isEqualTo("");
@@ -225,7 +204,7 @@ class HandlerTest {
     void delete_absentResource() throws IOException {
         Request request = new Request(Method.DELETE, "/missing-file");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.NOT_FOUND);
     }
@@ -234,7 +213,7 @@ class HandlerTest {
     void delete_existingDirectory() throws IOException {
         Request request = new Request(Method.DELETE, "/directory");
 
-        Response response = Handler.handle(request, directory);
+        Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.CONFLICT);
         assertThat(response.body).isEqualTo("Unable to delete: directory is a directory.");

@@ -51,7 +51,7 @@ class RequestParserTest {
 
         Throwable error = catchThrowable(() -> RequestParser.parse(in));
 
-        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).isInstanceOf(RequestParser.InvalidMethodException.class);
         assertThat(error).hasMessageContaining("Invalid method: INVALID");
     }
 
