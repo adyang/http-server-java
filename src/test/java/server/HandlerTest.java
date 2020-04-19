@@ -47,13 +47,58 @@ class HandlerTest {
     }
 
     @Test
+    void get_jpegImage() throws IOException {
+        Files.createFile(directory.resolve("image.jpeg"));
+        Request request = new Request("GET", "/image.jpeg");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.headers).containsEntry("Content-Type", "image/jpeg");
+    }
+
+    @Test
+    void get_pngImage() throws IOException {
+        Files.createFile(directory.resolve("image.png"));
+        Request request = new Request("GET", "/image.png");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.headers).containsEntry("Content-Type", "image/png");
+    }
+
+    @Test
+    void get_gifImage() throws IOException {
+        Files.createFile(directory.resolve("image.gif"));
+        Request request = new Request("GET", "/image.gif");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.headers).containsEntry("Content-Type", "image/gif");
+    }
+
+    @Test
+    void get_textFile() throws IOException {
+        Files.createFile(directory.resolve("file.txt"));
+        Request request = new Request("GET", "/file.txt");
+
+        Response response = Handler.handle(request, directory);
+
+        assertThat(response.statusCode).isEqualTo(200);
+        assertThat(response.headers).containsEntry("Content-Type", "text/plain");
+    }
+
+    @Test
     void get_rootDirectory() throws IOException {
         Request request = new Request("GET", "/");
 
         Response response = Handler.handle(request, directory);
 
         assertThat(response.statusCode).isEqualTo(200);
-        assertThat(response.headers).containsOnlyKeys("Content-Length");
+        assertThat(response.headers).containsKeys("Content-Length");
+        assertThat(response.headers).containsEntry("Content-Type", "text/html");
         assertThat((String) response.body)
                 .contains("<title>Directory: /</title>")
                 .contains("<h1>Directory: /</h1>")

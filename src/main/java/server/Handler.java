@@ -4,11 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -53,7 +55,10 @@ public class Handler {
     private static Response get(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         if (Files.isRegularFile(resource)) {
-            Map<String, Object> headers = Collections.singletonMap("Content-Length", Files.size(resource));
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Length", Files.size(resource));
+            String contentType = URLConnection.guessContentTypeFromName(resource.getFileName().toString());
+            if (contentType != null) headers.put("Content-Type", contentType);
             return new Response(200, headers, Files.readAllBytes(resource));
         } else if (Files.isDirectory(resource)) {
             String listing = Files.list(resource)
@@ -62,7 +67,9 @@ public class Handler {
                     .collect(Collectors.joining());
             String directoryTemplate = slurp("/directory.html");
             String directoryListing = String.format(directoryTemplate, request.uri, listing);
-            Map<String, Object> headers = Collections.singletonMap("Content-Length", directoryListing.length());
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Length", directoryListing.length());
+            headers.put("Content-Type", "text/html");
             return new Response(200, headers, directoryListing);
         } else {
             return new Response(404, "");
