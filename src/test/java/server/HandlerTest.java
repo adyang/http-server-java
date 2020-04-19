@@ -27,7 +27,7 @@ class HandlerTest {
 
     @Test
     void get_absentResource() throws IOException {
-        Request request = new Request("GET", "/does-not-exists");
+        Request request = new Request(Method.GET, "/does-not-exists");
 
         Response response = Handler.handle(request, directory);
 
@@ -37,7 +37,7 @@ class HandlerTest {
 
     @Test
     void get_existingResource() throws IOException {
-        Request request = new Request("GET", "/existing-file");
+        Request request = new Request(Method.GET, "/existing-file");
 
         Response response = Handler.handle(request, directory);
 
@@ -49,7 +49,7 @@ class HandlerTest {
     @Test
     void get_jpegImage() throws IOException {
         Files.createFile(directory.resolve("image.jpeg"));
-        Request request = new Request("GET", "/image.jpeg");
+        Request request = new Request(Method.GET, "/image.jpeg");
 
         Response response = Handler.handle(request, directory);
 
@@ -60,7 +60,7 @@ class HandlerTest {
     @Test
     void get_pngImage() throws IOException {
         Files.createFile(directory.resolve("image.png"));
-        Request request = new Request("GET", "/image.png");
+        Request request = new Request(Method.GET, "/image.png");
 
         Response response = Handler.handle(request, directory);
 
@@ -71,7 +71,7 @@ class HandlerTest {
     @Test
     void get_gifImage() throws IOException {
         Files.createFile(directory.resolve("image.gif"));
-        Request request = new Request("GET", "/image.gif");
+        Request request = new Request(Method.GET, "/image.gif");
 
         Response response = Handler.handle(request, directory);
 
@@ -82,7 +82,7 @@ class HandlerTest {
     @Test
     void get_textFile() throws IOException {
         Files.createFile(directory.resolve("file.txt"));
-        Request request = new Request("GET", "/file.txt");
+        Request request = new Request(Method.GET, "/file.txt");
 
         Response response = Handler.handle(request, directory);
 
@@ -92,7 +92,7 @@ class HandlerTest {
 
     @Test
     void get_rootDirectory() throws IOException {
-        Request request = new Request("GET", "/");
+        Request request = new Request(Method.GET, "/");
 
         Response response = Handler.handle(request, directory);
 
@@ -111,7 +111,7 @@ class HandlerTest {
 
     @Test
     void get_nonRootDirectory() throws IOException {
-        Request request = new Request("GET", "/directory");
+        Request request = new Request(Method.GET, "/directory");
 
         Response response = Handler.handle(request, directory);
 
@@ -124,7 +124,7 @@ class HandlerTest {
 
     @Test
     void head_absentResource() throws IOException {
-        Request request = new Request("HEAD", "/does-not-exists");
+        Request request = new Request(Method.HEAD, "/does-not-exists");
 
         Response response = Handler.handle(request, directory);
 
@@ -134,7 +134,7 @@ class HandlerTest {
 
     @Test
     void head_existingResource() throws IOException {
-        Request request = new Request("HEAD", "/existing-file");
+        Request request = new Request(Method.HEAD, "/existing-file");
 
         Response response = Handler.handle(request, directory);
 
@@ -145,7 +145,7 @@ class HandlerTest {
 
     @Test
     void options_anyResource() throws IOException {
-        Request request = new Request("OPTIONS", "/any-path");
+        Request request = new Request(Method.OPTIONS, "/any-path");
 
         Response response = Handler.handle(request, directory);
 
@@ -157,7 +157,7 @@ class HandlerTest {
 
     @Test
     void options_logsResource() throws IOException {
-        Request request = new Request("OPTIONS", "/logs");
+        Request request = new Request(Method.OPTIONS, "/logs");
 
         Response response = Handler.handle(request, directory);
 
@@ -169,7 +169,7 @@ class HandlerTest {
 
     @Test
     void put_absentResource() throws IOException {
-        Request request = new Request("PUT", "/new-file", "lineOne\nlineTwo");
+        Request request = new Request(Method.PUT, "/new-file", "lineOne\nlineTwo");
 
         Response response = Handler.handle(request, directory);
 
@@ -180,7 +180,7 @@ class HandlerTest {
 
     @Test
     void put_existingResource() throws IOException {
-        Request request = new Request("PUT", "/existing-file", "New Hello World!");
+        Request request = new Request(Method.PUT, "/existing-file", "New Hello World!");
 
         Response response = Handler.handle(request, directory);
 
@@ -191,7 +191,7 @@ class HandlerTest {
 
     @Test
     void put_emptyResource() throws IOException {
-        Request request = new Request("PUT", "/new-file");
+        Request request = new Request(Method.PUT, "/new-file");
 
         Response response = Handler.handle(request, directory);
 
@@ -202,7 +202,7 @@ class HandlerTest {
 
     @Test
     void put_existingDirectory() throws IOException {
-        Request request = new Request("PUT", "/directory", "New Hello World!");
+        Request request = new Request(Method.PUT, "/directory", "New Hello World!");
 
         Response response = Handler.handle(request, directory);
 
@@ -212,7 +212,7 @@ class HandlerTest {
 
     @Test
     void delete_existingResource() throws IOException {
-        Request request = new Request("DELETE", "/existing-file");
+        Request request = new Request(Method.DELETE, "/existing-file");
 
         Response response = Handler.handle(request, directory);
 
@@ -223,7 +223,7 @@ class HandlerTest {
 
     @Test
     void delete_absentResource() throws IOException {
-        Request request = new Request("DELETE", "/missing-file");
+        Request request = new Request(Method.DELETE, "/missing-file");
 
         Response response = Handler.handle(request, directory);
 
@@ -232,7 +232,7 @@ class HandlerTest {
 
     @Test
     void delete_existingDirectory() throws IOException {
-        Request request = new Request("DELETE", "/directory");
+        Request request = new Request(Method.DELETE, "/directory");
 
         Response response = Handler.handle(request, directory);
 

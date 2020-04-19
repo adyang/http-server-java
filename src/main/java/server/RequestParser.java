@@ -13,7 +13,16 @@ public class RequestParser {
 
     private static Request parseRequestLine(String line) {
         String[] tokens = line.split(" ");
-        return new Request(tokens[0], tokens[1]);
+        return new Request(parseMethod(tokens[0]), tokens[1]);
+
+    }
+
+    private static Method parseMethod(String methodToken) {
+        try {
+            return Method.valueOf(methodToken);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException("Invalid method: " + methodToken);
+        }
     }
 
     private static int parseContentLength(BufferedReader in) throws IOException {

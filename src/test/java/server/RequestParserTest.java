@@ -19,7 +19,7 @@ class RequestParserTest {
 
         Request request = RequestParser.parse(in);
 
-        assertThat(request.method).isEqualTo("GET");
+        assertThat(request.method).isEqualTo(Method.GET);
         assertThat(request.uri).isEqualTo("/existing-file");
         assertThat(request.body).isEqualTo("");
     }
@@ -37,9 +37,22 @@ class RequestParserTest {
 
         Request request = RequestParser.parse(in);
 
-        assertThat(request.method).isEqualTo("PUT");
+        assertThat(request.method).isEqualTo(Method.PUT);
         assertThat(request.uri).isEqualTo("/existing-file");
         assertThat(request.body).isEqualTo("lineOne\nlineTwo\nlineThree\n");
+    }
+
+    @Test
+    void parse_requestWithInvalidMethod() {
+        String input = "INVALID /existing-file HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "\r\n";
+        BufferedReader in = new BufferedReader(new StringReader(input));
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Invalid method: INVALID");
     }
 
     @Test

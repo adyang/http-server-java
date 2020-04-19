@@ -20,15 +20,15 @@ public class Handler {
     static Response handle(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         switch (request.method) {
-            case "OPTIONS":
+            case OPTIONS:
                 return options(resource);
-            case "HEAD":
+            case HEAD:
                 return head(resource);
-            case "GET":
+            case GET:
                 return get(request, directory);
-            case "PUT":
+            case PUT:
                 return put(request, directory);
-            case "DELETE":
+            case DELETE:
                 return delete(request, directory);
             default:
                 return new Response(500, "");

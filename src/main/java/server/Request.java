@@ -1,15 +1,15 @@
 package server;
 
 public class Request {
-    public final String method;
+    public final Method method;
     public final String uri;
     public String body;
 
-    public Request(String method, String uri) {
+    public Request(Method method, String uri) {
         this(method, uri, "");
     }
 
-    public Request(String method, String uri, String body) {
+    public Request(Method method, String uri, String body) {
         this.method = method;
         this.uri = uri;
         this.body = body;
