@@ -1,5 +1,7 @@
 package server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import server.data.Method;
 import server.data.Request;
 
@@ -9,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RequestParser {
+    private static final Logger logger = LoggerFactory.getLogger(RequestParser.class);
+
     static Request parse(BufferedReader in) throws IOException {
         Request request = parseRequestLine(in.readLine());
         request.headers = parseHeaders(in);
@@ -18,6 +22,7 @@ public class RequestParser {
     }
 
     private static Request parseRequestLine(String line) {
+        logger.info("[Request] '{}'", line);
         String[] tokens = line.split(" ");
         return new Request(parseMethod(tokens[0]), tokens[1]);
     }

@@ -1,5 +1,7 @@
 package server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import server.data.Response;
 
 import java.io.IOException;
@@ -8,6 +10,8 @@ import java.io.UncheckedIOException;
 import java.util.Map;
 
 public class ResponseComposer {
+    private static final Logger logger = LoggerFactory.getLogger(ResponseComposer.class);
+
     static void compose(PrintStream out, Response response) {
         writeStatusLine(out, response);
         writeHeaders(out, response);
@@ -17,7 +21,9 @@ public class ResponseComposer {
     }
 
     private static void writeStatusLine(PrintStream out, Response response) {
-        out.printf("HTTP/1.1 %d %s\r\n", response.status.code, response.status.reason);
+        String statusLine = String.format("HTTP/1.1 %d %s", response.status.code, response.status.reason);
+        logger.info("[Response] '{}'", statusLine);
+        out.print(statusLine + "\r\n");
     }
 
     private static void writeHeaders(PrintStream out, Response response) {

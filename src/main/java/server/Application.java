@@ -31,6 +31,7 @@ public class Application {
 
     public static void main(String[] args) {
         Arguments arguments = Arguments.parse(asList(args));
+        System.setProperty("logDir", arguments.directory);
 
         Handler appHandler = new DefaultHandler(Paths.get(arguments.directory));
         appHandler = new Authoriser(appHandler, ACCESS_CONTROL_LIST, DEFAULT_ACCESS);
