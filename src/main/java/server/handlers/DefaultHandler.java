@@ -10,12 +10,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class DefaultHandler implements Handler {
@@ -55,25 +59,91 @@ public class DefaultHandler implements Handler {
     private static Response get(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         if (Files.isRegularFile(resource)) {
-            Map<String, Object> headers = new HashMap<>();
-            headers.put("Content-Length", Files.size(resource));
-            String contentType = URLConnection.guessContentTypeFromName(resource.getFileName().toString());
-            if (contentType != null) headers.put("Content-Type", contentType);
-            return new Response(Status.OK, headers, Files.readAllBytes(resource));
+            return getFile(request, resource);
         } else if (Files.isDirectory(resource)) {
-            String listing = Files.list(resource)
-                    .map(Path::getFileName)
-                    .map(f -> String.format("<li><a href=\"%s\">%s</a></li>", linkOf(request.uri, f), f))
-                    .collect(Collectors.joining());
-            String directoryTemplate = slurp("/directory.html");
-            String directoryListing = String.format(directoryTemplate, request.uri, listing);
-            Map<String, Object> headers = new HashMap<>();
-            headers.put("Content-Length", directoryListing.length());
-            headers.put("Content-Type", "text/html");
-            return new Response(Status.OK, headers, directoryListing);
+            return getDirectoryListing(request, resource);
         } else {
             return new Response(Status.NOT_FOUND, "");
         }
+    }
+
+    private static Response getFile(Request request, Path resource) throws IOException {
+        if (request.headers.containsKey("Range")) {
+            return partialContentOf(resource, request.headers);
+        } else {
+            return fullContentOf(resource);
+        }
+    }
+
+    private static Response fullContentOf(Path resource) throws IOException {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("Content-Length", Files.size(resource));
+        String contentType = URLConnection.guessContentTypeFromName(resource.getFileName().toString());
+        if (contentType != null) headers.put("Content-Type", contentType);
+        return new Response(Status.OK, headers, Files.readAllBytes(resource));
+    }
+
+    private static Response partialContentOf(Path resource, Map<String, String> requestHeaders) throws IOException {
+        try (SeekableByteChannel sbc = Files.newByteChannel(resource)) {
+            Range range = parseRange(requestHeaders.get("Range"), sbc.size());
+            ByteBuffer buffer = ByteBuffer.allocate(range.end - range.start + 1);
+            sbc.position(range.start);
+            int bytesRead = sbc.read(buffer);
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Range", String.format("bytes %d-%d/%d", range.start, range.end, sbc.size()));
+            headers.put("Content-Length", bytesRead);
+            return new Response(Status.PARTIAL_CONTENT, headers, buffer.array());
+        } catch (UnknownRangeUnit e) {
+            return fullContentOf(resource);
+        } catch (InvalidByteRange e) {
+            Map<String, Object> headers = Collections.singletonMap("Content-Range", String.format("bytes */%d", e.resourceSize));
+            return new Response(Status.REQUESTED_RANGE_NOT_SATISFIABLE, headers, "");
+        }
+    }
+
+    private static Range parseRange(String range, long resourceSize) {
+        if (!range.trim().startsWith("bytes=")) throw new UnknownRangeUnit();
+        Pattern pattern = Pattern.compile("bytes=(?:(?<start>\\d+)-(?<end>\\d*)|-(?<suffix>\\d+))");
+        Matcher matcher = pattern.matcher(range);
+        if (!matcher.find()) throw new InvalidByteRange(resourceSize);
+        if (matcher.group("suffix") == null) {
+            return parseStartEndRange(matcher.group("start"), matcher.group("end"), resourceSize);
+        } else {
+            return parseSuffixRange(matcher.group("suffix"), resourceSize);
+        }
+    }
+
+    private static Range parseStartEndRange(String rawStart, String rawEnd, long resourceSize) {
+        int start = Integer.parseInt(rawStart);
+        if (start >= resourceSize) throw new InvalidByteRange(resourceSize);
+        if (rawEnd.isEmpty()) {
+            return new Range(start, (int) (resourceSize - 1));
+        } else {
+            int end = Integer.parseInt(rawEnd);
+            if (start > end) throw new InvalidByteRange(resourceSize);
+            return new Range(start, Math.min(end, (int) (resourceSize - 1)));
+        }
+    }
+
+    private static Range parseSuffixRange(String rawSuffix, long resourceSize) {
+        int suffixLength = Integer.parseInt(rawSuffix);
+        if (suffixLength == 0) throw new InvalidByteRange(resourceSize);
+        int start = Math.max(Math.toIntExact(resourceSize - suffixLength), 0);
+        int end = (int) resourceSize - 1;
+        return new Range(start, end);
+    }
+
+    private static Response getDirectoryListing(Request request, Path resource) throws IOException {
+        String listing = Files.list(resource)
+                .map(Path::getFileName)
+                .map(f -> String.format("<li><a href=\"%s\">%s</a></li>", linkOf(request.uri, f), f))
+                .collect(Collectors.joining());
+        String directoryTemplate = slurp("/directory.html");
+        String directoryListing = String.format(directoryTemplate, request.uri, listing);
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("Content-Length", directoryListing.length());
+        headers.put("Content-Type", "text/html");
+        return new Response(Status.OK, headers, directoryListing);
     }
 
     private static String linkOf(String basePath, Path filename) {
@@ -120,6 +190,27 @@ public class DefaultHandler implements Handler {
             return Files.write(resource, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static class UnknownRangeUnit extends RuntimeException {
+    }
+
+    private static class InvalidByteRange extends RuntimeException {
+        final long resourceSize;
+
+        public InvalidByteRange(long resourceSize) {
+            this.resourceSize = resourceSize;
+        }
+    }
+
+    private static class Range {
+        final int start;
+        final int end;
+
+        public Range(int start, int end) {
+            this.start = start;
+            this.end = end;
         }
     }
 }
