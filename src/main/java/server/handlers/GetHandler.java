@@ -8,15 +8,12 @@ import server.data.Request;
 import server.data.Response;
 import server.data.Status;
 import server.util.ByteChannels;
+import server.util.Resources;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URLConnection;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -29,7 +26,6 @@ import java.util.stream.Collectors;
 
 public class GetHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(GetHandler.class);
-    private static final int EOF = -1;
 
     private final Path directory;
 
@@ -137,7 +133,7 @@ public class GetHandler implements Handler {
                 .map(Path::getFileName)
                 .map(f -> String.format("<li><a href=\"%s\">%s</a></li>", linkOf(request.uri, f), f))
                 .collect(Collectors.joining());
-        String directoryTemplate = slurp("/directory.html");
+        String directoryTemplate = Resources.slurp("/directory.html");
         String directoryListing = String.format(directoryTemplate, request.uri, listing);
         Map<String, Object> headers = new HashMap<>();
         headers.put(Header.CONTENT_LENGTH, directoryListing.length());
@@ -147,18 +143,6 @@ public class GetHandler implements Handler {
 
     private static String linkOf(String basePath, Path filename) {
         return basePath.endsWith("/") ? basePath + filename : basePath + "/" + filename;
-    }
-
-    private static String slurp(String resourcePath) {
-        try (InputStream in = GetHandler.class.getResourceAsStream(resourcePath);
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = in.read(buffer)) != EOF) out.write(buffer, 0, length);
-            return out.toString(StandardCharsets.UTF_8.name());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private static class UnknownRangeUnit extends RuntimeException {
