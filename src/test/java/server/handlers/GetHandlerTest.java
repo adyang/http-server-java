@@ -3,7 +3,6 @@ package server.handlers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import server.Handler;
 import server.data.Header;
 import server.data.Method;
 import server.data.Request;
@@ -22,10 +21,10 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-class DefaultHandlerTest {
+public class GetHandlerTest {
     @TempDir
     Path directory;
-    private Handler handler;
+    private GetHandler handler;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -35,7 +34,7 @@ class DefaultHandlerTest {
         Files.createDirectory(directory.resolve("directory"));
         Files.createFile(directory.resolve("directory").resolve("inner-file"));
 
-        handler = new DefaultHandler(directory);
+        handler = new GetHandler(directory);
     }
 
     @Test
@@ -301,100 +300,6 @@ class DefaultHandlerTest {
                 entry(Header.CONTENT_LENGTH, 12L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
-    }
-
-    @Test
-    void head_absentResource() throws IOException {
-        Request request = new Request(Method.HEAD, "/does-not-exists");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.NOT_FOUND);
-        assertThat(response.body).isEqualTo("");
-    }
-
-    @Test
-    void head_existingResource() throws IOException {
-        Request request = new Request(Method.HEAD, "/existing-file");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsOnly(entry(Header.CONTENT_LENGTH, 12L));
-        assertThat(response.body).isEqualTo("");
-    }
-
-    @Test
-    void put_absentResource() throws IOException {
-        Request request = new Request(Method.PUT, "/new-file", "lineOne\nlineTwo");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.CREATED);
-        assertThat(Files.readAllLines(directory.resolve("new-file")))
-                .containsExactly("lineOne", "lineTwo");
-    }
-
-    @Test
-    void put_existingResource() throws IOException {
-        Request request = new Request(Method.PUT, "/existing-file", "New Hello World!");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(Files.readAllLines(directory.resolve("existing-file")))
-                .containsExactly("New Hello World!");
-    }
-
-    @Test
-    void put_emptyResource() throws IOException {
-        Request request = new Request(Method.PUT, "/new-file");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.CREATED);
-        assertThat(new String(Files.readAllBytes(directory.resolve("new-file")), StandardCharsets.UTF_8))
-                .isEmpty();
-    }
-
-    @Test
-    void put_existingDirectory() throws IOException {
-        Request request = new Request(Method.PUT, "/directory", "New Hello World!");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.CONFLICT);
-        assertThat(response.body).isEqualTo("Unable to create/update: directory is a directory.");
-    }
-
-    @Test
-    void delete_existingResource() throws IOException {
-        Request request = new Request(Method.DELETE, "/existing-file");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.body).isEqualTo("");
-        assertThat(Files.exists(directory.resolve("existing-file"))).isFalse();
-    }
-
-    @Test
-    void delete_absentResource() throws IOException {
-        Request request = new Request(Method.DELETE, "/missing-file");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.NOT_FOUND);
-    }
-
-    @Test
-    void delete_existingDirectory() throws IOException {
-        Request request = new Request(Method.DELETE, "/directory");
-
-        Response response = handler.handle(request);
-
-        assertThat(response.status).isEqualTo(Status.CONFLICT);
-        assertThat(response.body).isEqualTo("Unable to delete: directory is a directory.");
     }
 
     private String slurpReadableByteChannel(Object body) throws IOException {

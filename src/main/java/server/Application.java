@@ -3,9 +3,14 @@ package server;
 import server.data.Method;
 import server.handlers.Authoriser;
 import server.handlers.BasicAuthenticator;
-import server.handlers.DefaultHandler;
+import server.handlers.DeleteHandler;
+import server.handlers.Dispatcher;
+import server.handlers.GetHandler;
+import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
+import server.handlers.PutHandler;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.List;
@@ -33,7 +38,7 @@ public class Application {
         Arguments arguments = Arguments.parse(asList(args));
         System.setProperty("logDir", arguments.directory);
 
-        Handler appHandler = new DefaultHandler(Paths.get(arguments.directory));
+        Handler appHandler = new Dispatcher(routes(Paths.get(arguments.directory)));
         appHandler = new Authoriser(appHandler, ACCESS_CONTROL_LIST, DEFAULT_ACCESS);
         appHandler = new BasicAuthenticator(appHandler, REALM, protectedPathsFrom(ACCESS_CONTROL_LIST), CREDENTIALS_STORE);
         appHandler = new OptionsHandler(appHandler, ALLOWED_METHODS, DEFAULT_ACCESS);
@@ -41,6 +46,15 @@ public class Application {
         httpServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(httpServer::stop));
+    }
+
+    private static Map<Method, Handler> routes(Path directory) {
+        return Stream.of(
+                new AbstractMap.SimpleImmutableEntry<>(Method.HEAD, new HeadHandler(directory)),
+                new AbstractMap.SimpleImmutableEntry<>(Method.GET, new GetHandler(directory)),
+                new AbstractMap.SimpleImmutableEntry<>(Method.PUT, new PutHandler(directory)),
+                new AbstractMap.SimpleImmutableEntry<>(Method.DELETE, new DeleteHandler(directory))
+        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private static List<String> protectedPathsFrom(Map<String, Map<String, List<Method>>> accessControlList) {

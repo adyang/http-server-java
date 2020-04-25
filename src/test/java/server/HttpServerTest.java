@@ -5,7 +5,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import server.handlers.DefaultHandler;
+import server.data.Method;
+import server.handlers.Dispatcher;
+import server.handlers.GetHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,7 +22,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -40,7 +44,8 @@ public class HttpServerTest {
 
     @BeforeEach
     void setUp() {
-        Handler appHandler = new DefaultHandler(directory);
+        Map<Method, Handler> routes = singletonMap(Method.GET, new GetHandler(directory));
+        Handler appHandler = new Dispatcher(routes);
         server = new HttpServer(PORT, appHandler, Duration.ofMillis(10));
         server.start();
     }

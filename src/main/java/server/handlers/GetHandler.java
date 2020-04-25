@@ -27,42 +27,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class DefaultHandler implements Handler {
-    private static final Logger logger = LoggerFactory.getLogger(DefaultHandler.class);
+public class GetHandler implements Handler {
+    private static final Logger logger = LoggerFactory.getLogger(GetHandler.class);
     private static final int EOF = -1;
+
     private final Path directory;
 
-    public DefaultHandler(Path directory) {
+    public GetHandler(Path directory) {
         this.directory = directory;
     }
 
     @Override
     public Response handle(Request request) throws IOException {
-        Path resource = directory.resolve(request.uri.substring(1));
-        switch (request.method) {
-            case HEAD:
-                return head(resource);
-            case GET:
-                return get(request, directory);
-            case PUT:
-                return put(request, directory);
-            case DELETE:
-                return delete(request, directory);
-            default:
-                return new Response(Status.INTERNAL_SERVER_ERROR, "");
-        }
-    }
-
-    private static Response head(Path resource) throws IOException {
-        if (Files.exists(resource)) {
-            Map<String, Object> headers = Collections.singletonMap(Header.CONTENT_LENGTH, Files.size(resource));
-            return new Response(Status.OK, headers, "");
-        } else {
-            return new Response(Status.NOT_FOUND, "");
-        }
-    }
-
-    private static Response get(Request request, Path directory) throws IOException {
         Path resource = directory.resolve(request.uri.substring(1));
         if (Files.isRegularFile(resource)) {
             return getFile(request, resource);
@@ -174,43 +150,12 @@ public class DefaultHandler implements Handler {
     }
 
     private static String slurp(String resourcePath) {
-        try (InputStream in = DefaultHandler.class.getResourceAsStream(resourcePath);
+        try (InputStream in = GetHandler.class.getResourceAsStream(resourcePath);
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[1024];
             int length;
             while ((length = in.read(buffer)) != EOF) out.write(buffer, 0, length);
             return out.toString(StandardCharsets.UTF_8.name());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static Response put(Request request, Path directory) {
-        Path resource = directory.resolve(request.uri.substring(1));
-        if (Files.isRegularFile(resource)) {
-            write(resource, request.body);
-            return new Response(Status.OK, request.body);
-        } else if (Files.notExists(resource)) {
-            write(resource, request.body);
-            return new Response(Status.CREATED, request.body);
-        } else {
-            return new Response(Status.CONFLICT, "Unable to create/update: " + resource.getFileName() + " is a directory.");
-        }
-    }
-
-    private static Response delete(Request request, Path directory) throws IOException {
-        Path resource = directory.resolve(request.uri.substring(1));
-        if (Files.isDirectory(resource)) {
-            return new Response(Status.CONFLICT, "Unable to delete: " + resource.getFileName() + " is a directory.");
-        } else {
-            boolean deleted = Files.deleteIfExists(resource);
-            return new Response(deleted ? Status.OK : Status.NOT_FOUND, "");
-        }
-    }
-
-    private static Path write(Path resource, String content) {
-        try {
-            return Files.write(resource, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
