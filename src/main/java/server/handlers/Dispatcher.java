@@ -6,7 +6,6 @@ import server.data.Request;
 import server.data.Response;
 import server.data.Status;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class Dispatcher implements Handler {
@@ -17,7 +16,7 @@ public class Dispatcher implements Handler {
     }
 
     @Override
-    public Response handle(Request request) throws IOException {
+    public Response handle(Request request) {
         if (routes.containsKey(request.method)) {
             Handler handler = routes.get(request.method);
             return handler.handle(request);

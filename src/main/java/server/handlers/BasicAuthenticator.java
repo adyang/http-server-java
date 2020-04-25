@@ -6,7 +6,6 @@ import server.data.Request;
 import server.data.Response;
 import server.data.Status;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
@@ -27,7 +26,7 @@ public class BasicAuthenticator implements Handler {
     }
 
     @Override
-    public Response handle(Request request) throws IOException {
+    public Response handle(Request request) {
         if (!protectedPaths.contains(request.uri)) {
             request.user = "anonymous";
             return handler.handle(request);
@@ -40,7 +39,7 @@ public class BasicAuthenticator implements Handler {
         }
     }
 
-    private Response attemptAuthenticationOf(Request request) throws IOException {
+    private Response attemptAuthenticationOf(Request request) {
         try {
             String[] credentials = parseCredentials(request.headers.get(Header.AUTHORIZATION));
             return authenticate(request, credentials[0], credentials[1]);
@@ -58,7 +57,7 @@ public class BasicAuthenticator implements Handler {
         return credentials;
     }
 
-    private Response authenticate(Request request, String username, String password) throws IOException {
+    private Response authenticate(Request request, String username, String password) {
         if (password.equals(credentialsStore.get(username))) {
             request.user = username;
             return handler.handle(request);

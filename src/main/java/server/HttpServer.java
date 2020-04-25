@@ -54,7 +54,7 @@ public class HttpServer {
             handleConnection(in, out);
         } catch (SocketTimeoutException ignore) {
         } catch (Exception e) {
-            logger.warn("Unable to handle connection.", e);
+            logger.error("Unable to complete error handling of connection.", e);
         }
     }
 
@@ -70,7 +70,8 @@ public class HttpServer {
         } catch (ResponseComposer.ComposeException e) {
             throw e; // Unable to compose, hence unable to send error response
         } catch (Exception e) {
-            ResponseComposer.compose(out, new Response(Status.INTERNAL_SERVER_ERROR, e.getMessage() + System.lineSeparator()));
+            logger.error("Error while handling connection.", e);
+            ResponseComposer.compose(out, new Response(Status.INTERNAL_SERVER_ERROR, ""));
         }
     }
 

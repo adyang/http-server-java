@@ -7,7 +7,6 @@ import server.data.Request;
 import server.data.Response;
 import server.data.Status;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,7 @@ public class OptionsHandler implements Handler {
     }
 
     @Override
-    public Response handle(Request request) throws IOException {
+    public Response handle(Request request) {
         if (request.method != Method.OPTIONS) return handler.handle(request);
 
         List<Method> methods = allowedMethods.getOrDefault(request.uri, defaultMethods);

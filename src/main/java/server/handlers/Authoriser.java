@@ -7,7 +7,6 @@ import server.data.Request;
 import server.data.Response;
 import server.data.Status;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,7 @@ public class Authoriser implements Handler {
     }
 
     @Override
-    public Response handle(Request request) throws IOException {
+    public Response handle(Request request) {
         if (accessControlList.containsKey(request.user))
             return authorise(request);
         else
@@ -34,7 +33,7 @@ public class Authoriser implements Handler {
                     "");
     }
 
-    private Response authorise(Request request) throws IOException {
+    private Response authorise(Request request) {
         Map<String, List<Method>> accessControl = accessControlList.get(request.user);
         List<Method> allowedMethods = accessControl.getOrDefault(request.uri, defaultAccess);
         if (allowedMethods.contains(request.method))
