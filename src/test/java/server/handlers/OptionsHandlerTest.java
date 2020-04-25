@@ -4,6 +4,7 @@ package server.handlers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import server.Handler;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 import server.data.Response;
@@ -39,7 +40,7 @@ class OptionsHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsEntry("Allow", "GET");
+        assertThat(response.headers).containsEntry(Header.ALLOW, "GET");
         assertThat(response.body).isEqualTo("");
     }
 
@@ -50,7 +51,7 @@ class OptionsHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsEntry("Allow", "GET, HEAD, OPTIONS");
+        assertThat(response.headers).containsEntry(Header.ALLOW, "GET, HEAD, OPTIONS");
         assertThat(response.body).isEqualTo("");
     }
 

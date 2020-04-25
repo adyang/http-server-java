@@ -3,6 +3,7 @@ package server.handlers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import server.Handler;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 import server.data.Response;
@@ -38,13 +39,13 @@ public class BasicAuthenticatorTest {
         Response response = authenticator.handle(request);
 
         assertThat(response.status).isEqualTo(Status.UNAUTHORIZED);
-        assertThat(response.headers).containsEntry("WWW-Authenticate", "Basic realm=\"default\"");
+        assertThat(response.headers).containsEntry(Header.WWW_AUTHENTICATE, "Basic realm=\"default\"");
     }
 
     @Test
     void protectedPath_authorizationHeader_withValidCredentials() throws IOException {
         String basicCookie = Base64.getEncoder().encodeToString("admin:password".getBytes(StandardCharsets.UTF_8));
-        Map<String, String> headers = singletonMap("Authorization", "Basic " + basicCookie);
+        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
         Request request = new Request(Method.GET, "/protected", headers, "");
 
         Response response = authenticator.handle(request);
@@ -56,19 +57,19 @@ public class BasicAuthenticatorTest {
     @Test
     void protectedPath_authorizationHeader_withInvalidCredentials() throws IOException {
         String basicCookie = Base64.getEncoder().encodeToString("admin:wrong".getBytes(StandardCharsets.UTF_8));
-        Map<String, String> headers = singletonMap("Authorization", "Basic " + basicCookie);
+        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
         Request request = new Request(Method.GET, "/protected", headers, "");
 
         Response response = authenticator.handle(request);
 
         assertThat(response.status).isEqualTo(Status.UNAUTHORIZED);
-        assertThat(response.headers).containsEntry("WWW-Authenticate", "Basic realm=\"default\"");
+        assertThat(response.headers).containsEntry(Header.WWW_AUTHENTICATE, "Basic realm=\"default\"");
         assertThat(response.body).isEqualTo("Invalid credentials" + System.lineSeparator());
     }
 
     @Test
     void protectedPath_malformedAuthorizationHeader() throws IOException {
-        Map<String, String> headers = singletonMap("Authorization", "BasicNoSpaceOnlyOneToken");
+        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "BasicNoSpaceOnlyOneToken");
         Request request = new Request(Method.GET, "/protected", headers, "");
 
         Response response = authenticator.handle(request);
@@ -80,7 +81,7 @@ public class BasicAuthenticatorTest {
     @Test
     void protectedPath_malformedCredentials() throws IOException {
         String basicCookie = Base64.getEncoder().encodeToString("userNoColon".getBytes(StandardCharsets.UTF_8));
-        Map<String, String> headers = singletonMap("Authorization", "Basic " + basicCookie);
+        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
         Request request = new Request(Method.GET, "/protected", headers, "");
 
         Response response = authenticator.handle(request);

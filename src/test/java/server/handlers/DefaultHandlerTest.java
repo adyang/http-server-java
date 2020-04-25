@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import server.Handler;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 import server.data.Response;
@@ -54,7 +55,7 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
+        assertThat(response.headers).containsOnly(entry(Header.CONTENT_LENGTH, 12L));
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
     }
 
@@ -66,7 +67,7 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsEntry("Content-Type", "image/jpeg");
+        assertThat(response.headers).containsEntry(Header.CONTENT_TYPE, "image/jpeg");
     }
 
     @Test
@@ -77,7 +78,7 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsEntry("Content-Type", "image/png");
+        assertThat(response.headers).containsEntry(Header.CONTENT_TYPE, "image/png");
     }
 
     @Test
@@ -88,7 +89,7 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsEntry("Content-Type", "image/gif");
+        assertThat(response.headers).containsEntry(Header.CONTENT_TYPE, "image/gif");
     }
 
     @Test
@@ -99,7 +100,7 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsEntry("Content-Type", "text/plain");
+        assertThat(response.headers).containsEntry(Header.CONTENT_TYPE, "text/plain");
     }
 
     @Test
@@ -109,8 +110,8 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsKeys("Content-Length");
-        assertThat(response.headers).containsEntry("Content-Type", "text/html");
+        assertThat(response.headers).containsKeys(Header.CONTENT_LENGTH);
+        assertThat(response.headers).containsEntry(Header.CONTENT_TYPE, "text/html");
         assertThat((String) response.body)
                 .contains("<title>Directory: /</title>")
                 .contains("<h1>Directory: /</h1>")
@@ -136,30 +137,30 @@ class DefaultHandlerTest {
 
     @Test
     void get_partialContent_startAndEndPresent() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=6-10");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-10");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes 6-10/12"),
-                entry("Content-Length", 5L)
+                entry(Header.CONTENT_RANGE, "bytes 6-10/12"),
+                entry(Header.CONTENT_LENGTH, 5L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("World");
     }
 
     @Test
     void get_partialContent_startAndEndPresent_endLargerThanLengthOfResource() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=6-18");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-18");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes 6-11/12"),
-                entry("Content-Length", 6L)
+                entry(Header.CONTENT_RANGE, "bytes 6-11/12"),
+                entry(Header.CONTENT_LENGTH, 6L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("World!");
     }
@@ -167,137 +168,137 @@ class DefaultHandlerTest {
     @Test
     void get_partialContent_startAndEndPresent_largeNumbers() throws IOException {
         String byteRange = String.format("bytes=%d-%d", (Integer.MAX_VALUE + 1L), (Integer.MAX_VALUE + 2L));
-        Map<String, String> headers = Collections.singletonMap("Range", byteRange);
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, byteRange);
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes */12")
+                entry(Header.CONTENT_RANGE, "bytes */12")
         );
     }
 
     @Test
     void get_partialContent_startPresentOnly() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=6-");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes 6-11/12"),
-                entry("Content-Length", 6L)
+                entry(Header.CONTENT_RANGE, "bytes 6-11/12"),
+                entry(Header.CONTENT_LENGTH, 6L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("World!");
     }
 
     @Test
     void get_partialContent_endPresentOnly() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=-3");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-3");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes 9-11/12"),
-                entry("Content-Length", 3L)
+                entry(Header.CONTENT_RANGE, "bytes 9-11/12"),
+                entry(Header.CONTENT_LENGTH, 3L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("ld!");
     }
 
     @Test
     void get_partialContent_startEqualToLengthOfResource() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=12-");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=12-");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes */12")
+                entry(Header.CONTENT_RANGE, "bytes */12")
         );
     }
 
     @Test
     void get_partialContent_startGreaterThanLengthOfResource() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=13-");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=13-");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes */12")
+                entry(Header.CONTENT_RANGE, "bytes */12")
         );
     }
 
     @Test
     void get_partialContent_startGreaterThanEnd() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=6-1");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-1");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes */12")
+                entry(Header.CONTENT_RANGE, "bytes */12")
         );
     }
 
     @Test
     void get_partialContent_endPresentOnly_isZero() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=-0");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-0");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes */12")
+                entry(Header.CONTENT_RANGE, "bytes */12")
         );
     }
 
     @Test
     void get_partialContent_endPresentOnly_largerThanLengthOfResource() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=-13");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-13");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes 0-11/12"),
-                entry("Content-Length", 12L)
+                entry(Header.CONTENT_RANGE, "bytes 0-11/12"),
+                entry(Header.CONTENT_LENGTH, 12L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
     }
 
     @Test
     void get_partialContent_invalidByteRange() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "bytes=-");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
         assertThat(response.headers).containsOnly(
-                entry("Content-Range", "bytes */12")
+                entry(Header.CONTENT_RANGE, "bytes */12")
         );
     }
 
     @Test
     void get_partialContent_unknownByteUnit() throws IOException {
-        Map<String, String> headers = Collections.singletonMap("Range", "unknown=0-3");
+        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "unknown=0-3");
         Request request = new Request(Method.GET, "/existing-file", headers, "");
 
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsOnly(
-                entry("Content-Length", 12L)
+                entry(Header.CONTENT_LENGTH, 12L)
         );
         assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
     }
@@ -319,7 +320,7 @@ class DefaultHandlerTest {
         Response response = handler.handle(request);
 
         assertThat(response.status).isEqualTo(Status.OK);
-        assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
+        assertThat(response.headers).containsOnly(entry(Header.CONTENT_LENGTH, 12L));
         assertThat(response.body).isEqualTo("");
     }
 

@@ -1,6 +1,7 @@
 package server;
 
 import org.junit.jupiter.api.Test;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 
@@ -42,7 +43,7 @@ class RequestParserTest {
         assertThat(request.uri).isEqualTo("/existing-file");
         assertThat(request.headers).containsOnly(
                 entry("Host", "localhost:8080"),
-                entry("Content-Length", "26")
+                entry(Header.CONTENT_LENGTH, "26")
         );
         assertThat(request.body).isEqualTo("lineOne\nlineTwo\nlineThree\n");
     }

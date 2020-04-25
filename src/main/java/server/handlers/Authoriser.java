@@ -1,6 +1,7 @@
 package server.handlers;
 
 import server.Handler;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 import server.data.Response;
@@ -29,7 +30,7 @@ public class Authoriser implements Handler {
             return authorise(request);
         else
             return new Response(Status.METHOD_NOT_ALLOWED,
-                    Collections.singletonMap("Allow", ""),
+                    Collections.singletonMap(Header.ALLOW, ""),
                     "");
     }
 
@@ -40,7 +41,7 @@ public class Authoriser implements Handler {
             return handler.handle(request);
         else {
             return new Response(Status.METHOD_NOT_ALLOWED,
-                    Collections.singletonMap("Allow", commaDelimited(allowedMethods)),
+                    Collections.singletonMap(Header.ALLOW, commaDelimited(allowedMethods)),
                     "");
         }
     }

@@ -3,6 +3,7 @@ package server.handlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.Handler;
+import server.data.Header;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
@@ -54,7 +55,7 @@ public class DefaultHandler implements Handler {
 
     private static Response head(Path resource) throws IOException {
         if (Files.exists(resource)) {
-            Map<String, Object> headers = Collections.singletonMap("Content-Length", Files.size(resource));
+            Map<String, Object> headers = Collections.singletonMap(Header.CONTENT_LENGTH, Files.size(resource));
             return new Response(Status.OK, headers, "");
         } else {
             return new Response(Status.NOT_FOUND, "");
@@ -73,7 +74,7 @@ public class DefaultHandler implements Handler {
     }
 
     private static Response getFile(Request request, Path resource) throws IOException {
-        if (request.headers.containsKey("Range")) {
+        if (request.headers.containsKey(Header.RANGE)) {
             return partialContentOf(resource, request.headers);
         } else {
             return fullContentOf(resource);
@@ -82,9 +83,9 @@ public class DefaultHandler implements Handler {
 
     private static Response fullContentOf(Path resource) throws IOException {
         Map<String, Object> headers = new HashMap<>();
-        headers.put("Content-Length", Files.size(resource));
+        headers.put(Header.CONTENT_LENGTH, Files.size(resource));
         String contentType = URLConnection.guessContentTypeFromName(resource.getFileName().toString());
-        if (contentType != null) headers.put("Content-Type", contentType);
+        if (contentType != null) headers.put(Header.CONTENT_TYPE, contentType);
         return new Response(Status.OK, headers, Files.newByteChannel(resource, StandardOpenOption.READ));
     }
 
@@ -93,20 +94,20 @@ public class DefaultHandler implements Handler {
         SeekableByteChannel sbc = null;
         try {
             sbc = Files.newByteChannel(resource, StandardOpenOption.READ);
-            Range range = parseRange(requestHeaders.get("Range"), sbc.size());
+            Range range = parseRange(requestHeaders.get(Header.RANGE), sbc.size());
             long partialSize = range.end - range.start + 1;
             sbc.position(range.start);
             ReadableByteChannel partialContent = ByteChannels.limit(sbc, partialSize);
             Map<String, Object> headers = new HashMap<>();
-            headers.put("Content-Range", String.format("bytes %d-%d/%d", range.start, range.end, sbc.size()));
-            headers.put("Content-Length", partialSize);
+            headers.put(Header.CONTENT_RANGE, String.format("bytes %d-%d/%d", range.start, range.end, sbc.size()));
+            headers.put(Header.CONTENT_LENGTH, partialSize);
             return new Response(Status.PARTIAL_CONTENT, headers, partialContent);
         } catch (UnknownRangeUnit e) {
             close(sbc);
             return fullContentOf(resource);
         } catch (InvalidByteRange e) {
             close(sbc);
-            Map<String, Object> headers = Collections.singletonMap("Content-Range", String.format("bytes */%d", e.resourceSize));
+            Map<String, Object> headers = Collections.singletonMap(Header.CONTENT_RANGE, String.format("bytes */%d", e.resourceSize));
             return new Response(Status.REQUESTED_RANGE_NOT_SATISFIABLE, headers, "");
         } catch (Exception e) {
             close(sbc);
@@ -163,8 +164,8 @@ public class DefaultHandler implements Handler {
         String directoryTemplate = slurp("/directory.html");
         String directoryListing = String.format(directoryTemplate, request.uri, listing);
         Map<String, Object> headers = new HashMap<>();
-        headers.put("Content-Length", directoryListing.length());
-        headers.put("Content-Type", "text/html");
+        headers.put(Header.CONTENT_LENGTH, directoryListing.length());
+        headers.put(Header.CONTENT_TYPE, "text/html");
         return new Response(Status.OK, headers, directoryListing);
     }
 

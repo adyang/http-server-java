@@ -1,6 +1,7 @@
 package server.handlers;
 
 import server.Handler;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 import server.data.Response;
@@ -29,7 +30,7 @@ public class OptionsHandler implements Handler {
 
         List<Method> methods = allowedMethods.getOrDefault(request.uri, defaultMethods);
         return new Response(Status.OK,
-                Collections.singletonMap("Allow", commaDelimited(methods)),
+                Collections.singletonMap(Header.ALLOW, commaDelimited(methods)),
                 "");
     }
 

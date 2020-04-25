@@ -2,6 +2,7 @@ package server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 
@@ -48,7 +49,7 @@ public class RequestParser {
     }
 
     private static int parseContentLength(Map<String, String> headers) {
-        String contentLength = headers.getOrDefault("Content-Length", "0");
+        String contentLength = headers.getOrDefault(Header.CONTENT_LENGTH, "0");
         try {
             return Integer.parseInt(contentLength);
         } catch (NumberFormatException e) {

@@ -3,6 +3,7 @@ package server.handlers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import server.Handler;
+import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 import server.data.Response;
@@ -55,7 +56,7 @@ public class AuthoriserTest {
         Response response = authoriser.handle(request);
 
         assertThat(response.status).isEqualTo(Status.METHOD_NOT_ALLOWED);
-        assertThat(response.headers).containsEntry("Allow", "GET, PUT");
+        assertThat(response.headers).containsEntry(Header.ALLOW, "GET, PUT");
     }
 
     @Test
@@ -76,7 +77,7 @@ public class AuthoriserTest {
         Response response = authoriser.handle(request);
 
         assertThat(response.status).isEqualTo(Status.METHOD_NOT_ALLOWED);
-        assertThat(response.headers).containsEntry("Allow", "GET, HEAD, OPTIONS");
+        assertThat(response.headers).containsEntry(Header.ALLOW, "GET, HEAD, OPTIONS");
     }
 
     @Test
@@ -87,6 +88,6 @@ public class AuthoriserTest {
         Response response = authoriser.handle(request);
 
         assertThat(response.status).isEqualTo(Status.METHOD_NOT_ALLOWED);
-        assertThat(response.headers).containsEntry("Allow", "");
+        assertThat(response.headers).containsEntry(Header.ALLOW, "");
     }
 }

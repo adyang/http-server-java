@@ -1,6 +1,7 @@
 package server.handlers;
 
 import server.Handler;
+import server.data.Header;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
@@ -32,16 +33,16 @@ public class BasicAuthenticator implements Handler {
             return handler.handle(request);
         }
 
-        if (request.headers.containsKey("Authorization")) {
+        if (request.headers.containsKey(Header.AUTHORIZATION)) {
             return attemptAuthenticationOf(request);
         } else {
-            return new Response(Status.UNAUTHORIZED, Collections.singletonMap("WWW-Authenticate", challenge), "");
+            return new Response(Status.UNAUTHORIZED, Collections.singletonMap(Header.WWW_AUTHENTICATE, challenge), "");
         }
     }
 
     private Response attemptAuthenticationOf(Request request) throws IOException {
         try {
-            String[] credentials = parseCredentials(request.headers.get("Authorization"));
+            String[] credentials = parseCredentials(request.headers.get(Header.AUTHORIZATION));
             return authenticate(request, credentials[0], credentials[1]);
         } catch (ParseException e) {
             return new Response(Status.BAD_REQUEST, "Malformed Authorization header: " + e.getMessage() + System.lineSeparator());
@@ -63,7 +64,7 @@ public class BasicAuthenticator implements Handler {
             return handler.handle(request);
         } else {
             return new Response(Status.UNAUTHORIZED,
-                    Collections.singletonMap("WWW-Authenticate", challenge),
+                    Collections.singletonMap(Header.WWW_AUTHENTICATE, challenge),
                     "Invalid credentials" + System.lineSeparator());
         }
     }
