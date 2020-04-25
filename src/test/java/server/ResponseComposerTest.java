@@ -4,10 +4,14 @@ import org.junit.jupiter.api.Test;
 import server.data.Response;
 import server.data.Status;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +41,20 @@ class ResponseComposerTest {
                 .isEqualTo("HTTP/1.1 200 OK\r\n"
                         + "\r\n"
                         + "body");
+    }
+
+    @Test
+    void compose_readableByteChannelBody() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        String content = String.join("", Collections.nCopies(1024 * 3 + 1, "a"));
+        ReadableByteChannel body = Channels.newChannel(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+
+        ResponseComposer.compose(new PrintStream(output), new Response(Status.OK, body));
+
+        assertThat(output.toString())
+                .isEqualTo("HTTP/1.1 200 OK\r\n"
+                        + "\r\n"
+                        + content);
     }
 
     @Test

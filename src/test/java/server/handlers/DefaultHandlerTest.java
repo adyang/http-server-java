@@ -8,8 +8,10 @@ import server.data.Method;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
+import server.util.ByteChannels;
 
 import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,7 +55,7 @@ class DefaultHandlerTest {
 
         assertThat(response.status).isEqualTo(Status.OK);
         assertThat(response.headers).containsOnly(entry("Content-Length", 12L));
-        assertThat(response.body).isEqualTo("Hello World!".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
     }
 
     @Test
@@ -142,9 +144,9 @@ class DefaultHandlerTest {
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
                 entry("Content-Range", "bytes 6-10/12"),
-                entry("Content-Length", 5)
+                entry("Content-Length", 5L)
         );
-        assertThat(response.body).isEqualTo("World".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("World");
     }
 
     @Test
@@ -157,9 +159,23 @@ class DefaultHandlerTest {
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
                 entry("Content-Range", "bytes 6-11/12"),
-                entry("Content-Length", 6)
+                entry("Content-Length", 6L)
         );
-        assertThat(response.body).isEqualTo("World!".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("World!");
+    }
+
+    @Test
+    void get_partialContent_startAndEndPresent_largeNumbers() throws IOException {
+        String byteRange = String.format("bytes=%d-%d", (Integer.MAX_VALUE + 1L), (Integer.MAX_VALUE + 2L));
+        Map<String, String> headers = Collections.singletonMap("Range", byteRange);
+        Request request = new Request(Method.GET, "/existing-file", headers, "");
+
+        Response response = handler.handle(request);
+
+        assertThat(response.status).isEqualTo(Status.REQUESTED_RANGE_NOT_SATISFIABLE);
+        assertThat(response.headers).containsOnly(
+                entry("Content-Range", "bytes */12")
+        );
     }
 
     @Test
@@ -172,9 +188,9 @@ class DefaultHandlerTest {
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
                 entry("Content-Range", "bytes 6-11/12"),
-                entry("Content-Length", 6)
+                entry("Content-Length", 6L)
         );
-        assertThat(response.body).isEqualTo("World!".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("World!");
     }
 
     @Test
@@ -187,9 +203,9 @@ class DefaultHandlerTest {
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
                 entry("Content-Range", "bytes 9-11/12"),
-                entry("Content-Length", 3)
+                entry("Content-Length", 3L)
         );
-        assertThat(response.body).isEqualTo("ld!".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("ld!");
     }
 
     @Test
@@ -254,9 +270,9 @@ class DefaultHandlerTest {
         assertThat(response.status).isEqualTo(Status.PARTIAL_CONTENT);
         assertThat(response.headers).containsOnly(
                 entry("Content-Range", "bytes 0-11/12"),
-                entry("Content-Length", 12)
+                entry("Content-Length", 12L)
         );
-        assertThat(response.body).isEqualTo("Hello World!".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
     }
 
     @Test
@@ -283,7 +299,7 @@ class DefaultHandlerTest {
         assertThat(response.headers).containsOnly(
                 entry("Content-Length", 12L)
         );
-        assertThat(response.body).isEqualTo("Hello World!".getBytes(StandardCharsets.UTF_8));
+        assertThat(slurpReadableByteChannel(response.body)).isEqualTo("Hello World!");
     }
 
     @Test
@@ -378,5 +394,11 @@ class DefaultHandlerTest {
 
         assertThat(response.status).isEqualTo(Status.CONFLICT);
         assertThat(response.body).isEqualTo("Unable to delete: directory is a directory.");
+    }
+
+    private String slurpReadableByteChannel(Object body) throws IOException {
+        try (ReadableByteChannel rbc = (ReadableByteChannel) body) {
+            return ByteChannels.slurp(rbc);
+        }
     }
 }

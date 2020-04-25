@@ -7,6 +7,10 @@ import server.data.Response;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Map;
 
 public class ResponseComposer {
@@ -37,6 +41,8 @@ public class ResponseComposer {
             writeStringBody(out, response.body);
         } else if (response.body instanceof byte[]) {
             writeByteArrayBody(out, (byte[]) response.body);
+        } else if (response.body instanceof ReadableByteChannel) {
+            writeReadableByteChannel(out, (ReadableByteChannel) response.body);
         }
     }
 
@@ -47,6 +53,21 @@ public class ResponseComposer {
     private static void writeByteArrayBody(PrintStream out, byte[] body) {
         try {
             out.write(body);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void writeReadableByteChannel(PrintStream out, ReadableByteChannel body) {
+        try (ReadableByteChannel rbc = body) {
+            WritableByteChannel wbc = Channels.newChannel(out);
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            while (rbc.read(buffer) != -1) {
+                rbc.read(buffer);
+                buffer.flip();
+                wbc.write(buffer);
+                buffer.clear();
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -1,20 +1,24 @@
 package server.handlers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import server.Handler;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
+import server.util.ByteChannels;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URLConnection;
-import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class DefaultHandler implements Handler {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultHandler.class);
     private static final int EOF = -1;
     private final Path directory;
 
@@ -80,24 +85,41 @@ public class DefaultHandler implements Handler {
         headers.put("Content-Length", Files.size(resource));
         String contentType = URLConnection.guessContentTypeFromName(resource.getFileName().toString());
         if (contentType != null) headers.put("Content-Type", contentType);
-        return new Response(Status.OK, headers, Files.readAllBytes(resource));
+        return new Response(Status.OK, headers, Files.newByteChannel(resource, StandardOpenOption.READ));
     }
 
     private static Response partialContentOf(Path resource, Map<String, String> requestHeaders) throws IOException {
-        try (SeekableByteChannel sbc = Files.newByteChannel(resource)) {
+        // Close file only on exceptions as downstream is responsible for closing on happy path
+        SeekableByteChannel sbc = null;
+        try {
+            sbc = Files.newByteChannel(resource, StandardOpenOption.READ);
             Range range = parseRange(requestHeaders.get("Range"), sbc.size());
-            ByteBuffer buffer = ByteBuffer.allocate(range.end - range.start + 1);
+            long partialSize = range.end - range.start + 1;
             sbc.position(range.start);
-            int bytesRead = sbc.read(buffer);
+            ReadableByteChannel partialContent = ByteChannels.limit(sbc, partialSize);
             Map<String, Object> headers = new HashMap<>();
             headers.put("Content-Range", String.format("bytes %d-%d/%d", range.start, range.end, sbc.size()));
-            headers.put("Content-Length", bytesRead);
-            return new Response(Status.PARTIAL_CONTENT, headers, buffer.array());
+            headers.put("Content-Length", partialSize);
+            return new Response(Status.PARTIAL_CONTENT, headers, partialContent);
         } catch (UnknownRangeUnit e) {
+            close(sbc);
             return fullContentOf(resource);
         } catch (InvalidByteRange e) {
+            close(sbc);
             Map<String, Object> headers = Collections.singletonMap("Content-Range", String.format("bytes */%d", e.resourceSize));
             return new Response(Status.REQUESTED_RANGE_NOT_SATISFIABLE, headers, "");
+        } catch (Exception e) {
+            close(sbc);
+            throw e;
+        }
+    }
+
+    private static void close(SeekableByteChannel sbc) {
+        if (sbc == null) return;
+        try {
+            sbc.close();
+        } catch (IOException e) {
+            logger.warn("Unable to close ByteChannel.", e);
         }
     }
 
@@ -114,22 +136,22 @@ public class DefaultHandler implements Handler {
     }
 
     private static Range parseStartEndRange(String rawStart, String rawEnd, long resourceSize) {
-        int start = Integer.parseInt(rawStart);
+        long start = Long.parseLong(rawStart);
         if (start >= resourceSize) throw new InvalidByteRange(resourceSize);
         if (rawEnd.isEmpty()) {
-            return new Range(start, (int) (resourceSize - 1));
+            return new Range(start, (resourceSize - 1));
         } else {
-            int end = Integer.parseInt(rawEnd);
+            long end = Long.parseLong(rawEnd);
             if (start > end) throw new InvalidByteRange(resourceSize);
-            return new Range(start, Math.min(end, (int) (resourceSize - 1)));
+            return new Range(start, Math.min(end, resourceSize - 1));
         }
     }
 
     private static Range parseSuffixRange(String rawSuffix, long resourceSize) {
-        int suffixLength = Integer.parseInt(rawSuffix);
+        long suffixLength = Long.parseLong(rawSuffix);
         if (suffixLength == 0) throw new InvalidByteRange(resourceSize);
-        int start = Math.max(Math.toIntExact(resourceSize - suffixLength), 0);
-        int end = (int) resourceSize - 1;
+        long start = Math.max(resourceSize - suffixLength, 0);
+        long end = resourceSize - 1;
         return new Range(start, end);
     }
 
@@ -205,10 +227,10 @@ public class DefaultHandler implements Handler {
     }
 
     private static class Range {
-        final int start;
-        final int end;
+        final long start;
+        final long end;
 
-        public Range(int start, int end) {
+        public Range(long start, long end) {
             this.start = start;
             this.end = end;
         }
