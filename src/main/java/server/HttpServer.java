@@ -1,5 +1,7 @@
 package server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
@@ -8,7 +10,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -16,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 public class HttpServer {
+    private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
+
     private final int port;
     private final Handler handler;
     private final Duration timeout;
@@ -38,22 +41,24 @@ public class HttpServer {
                     waitOrHandleConnection(serverSocket);
                 }
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                logger.error("Unable to open server socket.", e);
             }
         });
         serverThread.start();
     }
 
-    private void waitOrHandleConnection(ServerSocket serverSocket) throws IOException {
+    private void waitOrHandleConnection(ServerSocket serverSocket) {
         try (Socket clientSocket = serverSocket.accept();
              PrintStream out = new PrintStream(clientSocket.getOutputStream(), false, StandardCharsets.UTF_8.name());
              BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8))) {
             handleConnection(in, out);
         } catch (SocketTimeoutException ignore) {
+        } catch (Exception e) {
+            logger.warn("Unable to handle connection.", e);
         }
     }
 
-    private void handleConnection(BufferedReader in, PrintStream out) throws IOException {
+    private void handleConnection(BufferedReader in, PrintStream out) {
         try {
             Request request = RequestParser.parse(in);
             Response response = handler.handle(request);
@@ -62,6 +67,10 @@ public class HttpServer {
             ResponseComposer.compose(out, new Response(Status.BAD_REQUEST, e.getMessage() + System.lineSeparator()));
         } catch (RequestParser.InvalidMethodException e) {
             ResponseComposer.compose(out, new Response(Status.NOT_IMPLEMENTED, e.getMessage() + System.lineSeparator()));
+        } catch (ResponseComposer.ComposeException e) {
+            throw e; // Unable to compose, hence unable to send error response
+        } catch (Exception e) {
+            ResponseComposer.compose(out, new Response(Status.INTERNAL_SERVER_ERROR, e.getMessage() + System.lineSeparator()));
         }
     }
 

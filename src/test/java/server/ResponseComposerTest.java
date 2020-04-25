@@ -6,6 +6,7 @@ import server.data.Status;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 class ResponseComposerTest {
     @Test
@@ -94,5 +96,31 @@ class ResponseComposerTest {
                         + "headerOne: valueOne\r\n"
                         + "headerTwo: 2\r\n"
                         + "\r\n");
+    }
+
+    @Test
+    void compose_exceptionOnWritingResponse() {
+        IOException exception = new IOException("Error during write.");
+        ErrorPrintStream out = new ErrorPrintStream(exception);
+        Response response = new Response(Status.OK, new byte[0]);
+
+        Throwable error = catchThrowable(() -> ResponseComposer.compose(out, response));
+
+        assertThat(error).isInstanceOf(ResponseComposer.ComposeException.class);
+        assertThat(error).hasRootCause(exception);
+    }
+
+    private static class ErrorPrintStream extends PrintStream {
+        private final IOException exception;
+
+        public ErrorPrintStream(IOException exception) {
+            super(new ByteArrayOutputStream());
+            this.exception = exception;
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            throw exception;
+        }
     }
 }

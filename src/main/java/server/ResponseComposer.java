@@ -17,11 +17,15 @@ public class ResponseComposer {
     private static final Logger logger = LoggerFactory.getLogger(ResponseComposer.class);
 
     static void compose(PrintStream out, Response response) {
-        writeStatusLine(out, response);
-        writeHeaders(out, response);
-        out.print("\r\n");
-        writeBody(out, response);
-        out.flush();
+        try {
+            writeStatusLine(out, response);
+            writeHeaders(out, response);
+            out.print("\r\n");
+            writeBody(out, response);
+            out.flush();
+        } catch (Exception e) {
+            throw new ComposeException(e);
+        }
     }
 
     private static void writeStatusLine(PrintStream out, Response response) {
@@ -70,6 +74,12 @@ public class ResponseComposer {
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    public static class ComposeException extends RuntimeException {
+        public ComposeException(Exception e) {
+            super(e);
         }
     }
 }
