@@ -44,7 +44,8 @@ public class Application {
         appHandler = new BasicAuthenticator(appHandler, REALM, protectedPathsFrom(ACCESS_CONTROL_LIST), CREDENTIALS_STORE);
         appHandler = new OptionsHandler(appHandler, ALLOWED_METHODS, DEFAULT_ACCESS);
         appHandler = new DefaultResponseHeaderWrapper(appHandler);
-        HttpServer httpServer = new HttpServer(arguments.port, appHandler);
+        int numThreads = Runtime.getRuntime().availableProcessors() * (1 + 18);
+        HttpServer httpServer = new HttpServer(arguments.port, appHandler, numThreads);
         httpServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(httpServer::stop));

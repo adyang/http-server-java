@@ -15,44 +15,71 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class HttpServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
+    private static final String SERVER_THREAD_NAME = "server-main";
+    private static final int SHUTDOWN_TIMEOUT = 30;
+    private static final int SHUTDOWN_NOW_TIMEOUT = 30;
 
     private final int port;
     private final Handler handler;
+    private final ExecutorService executor;
     private final Duration timeout;
-    private volatile Thread serverThread;
+    private final Thread serverThread;
 
-    public HttpServer(int port, Handler handler) {
-        this(port, handler, Duration.ofMillis(500));
+    public HttpServer(int port, Handler handler, int numThreads) {
+        this(port, handler, Executors.newFixedThreadPool(numThreads), Duration.ofMillis(500));
     }
 
-    public HttpServer(int port, Handler handler, Duration timeout) {
+    public HttpServer(int port, Handler handler, ExecutorService executor, Duration timeout) {
         this.port = port;
         this.handler = handler;
+        this.executor = executor;
         this.timeout = timeout;
+        this.serverThread = new Thread(this::serverMain, SERVER_THREAD_NAME);
+        this.serverThread.setUncaughtExceptionHandler((t, e) -> logger.error("Unhandled exception.", e));
     }
 
     public void start() {
-        serverThread = new Thread(() -> {
-            try (ServerSocket serverSocket = newServerSocket(port, timeout)) {
-                while (!Thread.currentThread().isInterrupted()) {
-                    waitOrHandleConnection(serverSocket);
-                }
-            } catch (IOException e) {
-                logger.error("Unable to open server socket.", e);
-            }
-        });
         serverThread.start();
     }
 
-    private void waitOrHandleConnection(ServerSocket serverSocket) {
-        try (Socket clientSocket = serverSocket.accept();
-             PrintStream out = new PrintStream(clientSocket.getOutputStream(), false, StandardCharsets.UTF_8.name());
-             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8))) {
-            handleConnection(in, out);
+    private void serverMain() {
+        try (ServerSocket serverSocket = newServerSocket(port, timeout)) {
+            while (!executor.isShutdown()) {
+                waitOrHandleConnection(serverSocket);
+            }
+        } catch (IOException e) {
+            logger.error("Unable to open server socket or accept connection.", e);
+        } catch (RejectedExecutionException e) {
+            logger.info("Rejecting last connection, server is stopping.", e);
+        }
+    }
+
+    private ServerSocket newServerSocket(int port, Duration timeout) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(port);
+        serverSocket.setSoTimeout((int) timeout.toMillis());
+        return serverSocket;
+    }
+
+    private void waitOrHandleConnection(ServerSocket serverSocket) throws IOException {
+        try {
+            Socket clientSocket = serverSocket.accept();
+            executor.submit(() -> handle(clientSocket));
         } catch (SocketTimeoutException ignore) {
+        }
+    }
+
+    private void handle(Socket clientSocket) {
+        try (Socket socket = clientSocket;
+             PrintStream out = new PrintStream(socket.getOutputStream(), false, StandardCharsets.UTF_8.name());
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
+            handleConnection(in, out);
         } catch (Exception e) {
             logger.error("Unable to complete error handling of connection.", e);
         }
@@ -75,22 +102,30 @@ public class HttpServer {
         }
     }
 
-    private ServerSocket newServerSocket(int port, Duration timeout) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(port);
-        serverSocket.setSoTimeout((int) timeout.toMillis());
-        return serverSocket;
+    public void stop() {
+        stop(executor);
+        waitTillStop(serverThread);
     }
 
-    public void stop() {
-        serverThread.interrupt();
-        waitTillStop(serverThread);
+    private void stop(ExecutorService executor) {
+        executor.shutdown();
+        try {
+            if (executor.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS)) return;
+            executor.shutdownNow();
+            if (!executor.awaitTermination(SHUTDOWN_NOW_TIMEOUT, TimeUnit.SECONDS))
+                logger.error("Executor did not terminate.");
+        } catch (InterruptedException e) {
+            logger.warn("Interrupted while stopping executor.");
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void waitTillStop(Thread serverThread) {
         try {
             serverThread.join();
         } catch (InterruptedException e) {
-            System.err.println("Interrupted while stopping server.");
+            logger.warn("Interrupted while stopping server.");
         }
     }
 }

@@ -23,6 +23,8 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +48,8 @@ public class HttpServerTest {
     void setUp() {
         Map<Method, Handler> routes = singletonMap(Method.GET, new GetHandler(directory));
         Handler appHandler = new Dispatcher(routes);
-        server = new HttpServer(PORT, appHandler, Duration.ofMillis(10));
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        server = new HttpServer(PORT, appHandler, executor, Duration.ofMillis(10));
         server.start();
     }
 
