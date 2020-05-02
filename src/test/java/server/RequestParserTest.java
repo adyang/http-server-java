@@ -49,6 +49,16 @@ class RequestParserTest {
     }
 
     @Test
+    void parse_requestWithNoInput() {
+        BufferedReader in = new BufferedReader(new StringReader(""));
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Malformed request: missing request line");
+    }
+
+    @Test
     void parse_requestWithInvalidMethod() {
         String input = "INVALID /existing-file HTTP/1.1\r\n" +
                 "Host: localhost:8080\r\n" +

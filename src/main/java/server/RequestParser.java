@@ -24,6 +24,7 @@ public class RequestParser {
 
     private static Request parseRequestLine(String line) {
         logger.info("[Request] '{}'", line);
+        if (line == null) throw new ParseException("Malformed request: missing request line");
         String[] tokens = line.split(" ");
         return new Request(parseMethod(tokens[0]), tokens[1]);
     }
