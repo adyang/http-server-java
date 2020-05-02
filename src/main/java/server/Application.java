@@ -3,6 +3,7 @@ package server;
 import server.data.Method;
 import server.handlers.Authoriser;
 import server.handlers.BasicAuthenticator;
+import server.handlers.DefaultResponseHeaderWrapper;
 import server.handlers.DeleteHandler;
 import server.handlers.Dispatcher;
 import server.handlers.GetHandler;
@@ -42,6 +43,7 @@ public class Application {
         appHandler = new Authoriser(appHandler, ACCESS_CONTROL_LIST, DEFAULT_ACCESS);
         appHandler = new BasicAuthenticator(appHandler, REALM, protectedPathsFrom(ACCESS_CONTROL_LIST), CREDENTIALS_STORE);
         appHandler = new OptionsHandler(appHandler, ALLOWED_METHODS, DEFAULT_ACCESS);
+        appHandler = new DefaultResponseHeaderWrapper(appHandler);
         HttpServer httpServer = new HttpServer(arguments.port, appHandler);
         httpServer.start();
 
