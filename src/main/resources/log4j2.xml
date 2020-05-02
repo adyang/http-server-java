@@ -10,8 +10,7 @@
     </Appenders>
     <Loggers>
         <Root level="info">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="File"/>
+            <AppenderRef ref="${sys:logAppender:-File}"/>
         </Root>
     </Loggers>
 </Configuration>
