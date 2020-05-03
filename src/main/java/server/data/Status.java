@@ -8,6 +8,7 @@ public enum Status {
     UNAUTHORIZED(401, "Unauthorized"),
     NOT_FOUND(404, "Not Found"),
     METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
+    REQUEST_TIMEOUT(408, "Request Timeout"),
     CONFLICT(409, "Conflict"),
     REQUESTED_RANGE_NOT_SATISFIABLE(416, "Requested Range Not Satisfiable"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error"),

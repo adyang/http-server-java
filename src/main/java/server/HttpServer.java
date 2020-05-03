@@ -25,22 +25,25 @@ public class HttpServer {
     private static final String SERVER_THREAD_NAME = "server-main";
     private static final int SHUTDOWN_TIMEOUT = 30;
     private static final int SHUTDOWN_NOW_TIMEOUT = 30;
+    private static final Duration DEFAULT_ACCEPT_INTERVAL = Duration.ofMillis(500);
 
     private final int port;
     private final Handler handler;
     private final ExecutorService executor;
-    private final Duration timeout;
+    private final Duration soTimeout;
+    private final Duration acceptInterval;
     private final Thread serverThread;
 
-    public HttpServer(int port, Handler handler, int numThreads) {
-        this(port, handler, Executors.newFixedThreadPool(numThreads), Duration.ofMillis(500));
+    public HttpServer(int port, Handler handler, int numThreads, Duration soTimeout) {
+        this(port, handler, Executors.newFixedThreadPool(numThreads), soTimeout, DEFAULT_ACCEPT_INTERVAL);
     }
 
-    public HttpServer(int port, Handler handler, ExecutorService executor, Duration timeout) {
+    public HttpServer(int port, Handler handler, ExecutorService executor, Duration soTimeout, Duration acceptInterval) {
         this.port = port;
         this.handler = handler;
         this.executor = executor;
-        this.timeout = timeout;
+        this.soTimeout = soTimeout;
+        this.acceptInterval = acceptInterval;
         this.serverThread = new Thread(this::serverMain, SERVER_THREAD_NAME);
         this.serverThread.setUncaughtExceptionHandler((t, e) -> logger.error("Unhandled exception.", e));
     }
@@ -50,7 +53,7 @@ public class HttpServer {
     }
 
     private void serverMain() {
-        try (ServerSocket serverSocket = newServerSocket(port, timeout)) {
+        try (ServerSocket serverSocket = newServerSocket(port, acceptInterval)) {
             while (!executor.isShutdown()) {
                 waitOrHandleConnection(serverSocket);
             }
@@ -61,15 +64,16 @@ public class HttpServer {
         }
     }
 
-    private ServerSocket newServerSocket(int port, Duration timeout) throws IOException {
+    private ServerSocket newServerSocket(int port, Duration acceptInterval) throws IOException {
         ServerSocket serverSocket = new ServerSocket(port);
-        serverSocket.setSoTimeout((int) timeout.toMillis());
+        serverSocket.setSoTimeout((int) acceptInterval.toMillis());
         return serverSocket;
     }
 
     private void waitOrHandleConnection(ServerSocket serverSocket) throws IOException {
         try {
             Socket clientSocket = serverSocket.accept();
+            clientSocket.setSoTimeout((int) soTimeout.toMillis());
             executor.submit(() -> handle(clientSocket));
         } catch (SocketTimeoutException ignore) {
         }
@@ -94,6 +98,8 @@ public class HttpServer {
             ResponseComposer.compose(out, new Response(Status.BAD_REQUEST, e.getMessage() + System.lineSeparator()));
         } catch (RequestParser.InvalidMethodException e) {
             ResponseComposer.compose(out, new Response(Status.NOT_IMPLEMENTED, e.getMessage() + System.lineSeparator()));
+        } catch (SocketTimeoutException e) {
+            ResponseComposer.compose(out, new Response(Status.REQUEST_TIMEOUT, "Request timeout" + System.lineSeparator()));
         } catch (ResponseComposer.ComposeException e) {
             throw e; // Unable to compose, hence unable to send error response
         } catch (Exception e) {

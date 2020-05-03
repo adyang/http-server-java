@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import server.data.Method;
 import server.handlers.Dispatcher;
@@ -30,6 +31,7 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Timeout(value = 5)
 public class HttpServerTest {
     private static final String HOST = "localhost";
     private static final int PORT = 6000;
@@ -49,7 +51,7 @@ public class HttpServerTest {
         Map<Method, Handler> routes = singletonMap(Method.GET, new GetHandler(directory));
         Handler appHandler = new Dispatcher(routes);
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        server = new HttpServer(PORT, appHandler, executor, Duration.ofMillis(10));
+        server = new HttpServer(PORT, appHandler, executor, Duration.ofSeconds(5), Duration.ofMillis(10));
         server.start();
     }
 
@@ -84,6 +86,7 @@ public class HttpServerTest {
     }
 
     @Test
+    @Timeout(value = 30)
     void getRequest_largeResource() throws IOException {
         createLargeFile("large-file", 31);
         try (Socket socket = new Socket(HOST, PORT);

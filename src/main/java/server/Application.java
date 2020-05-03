@@ -13,6 +13,7 @@ import server.handlers.PutHandler;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class Application {
     private static final Map<String, List<Method>> ALLOWED_METHODS = singletonMap(
             "/logs", asList(Method.GET, Method.HEAD, Method.OPTIONS)
     );
+    private static final Duration SO_TIMEOUT = Duration.ofSeconds(20);
 
     public static void main(String[] args) {
         Arguments arguments = Arguments.parse(asList(args));
@@ -45,7 +47,7 @@ public class Application {
         appHandler = new OptionsHandler(appHandler, ALLOWED_METHODS, DEFAULT_ACCESS);
         appHandler = new DefaultResponseHeaderWrapper(appHandler);
         int numThreads = Runtime.getRuntime().availableProcessors() * (1 + 18);
-        HttpServer httpServer = new HttpServer(arguments.port, appHandler, numThreads);
+        HttpServer httpServer = new HttpServer(arguments.port, appHandler, numThreads, SO_TIMEOUT);
         httpServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(httpServer::stop));
