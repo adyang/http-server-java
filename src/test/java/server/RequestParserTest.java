@@ -4,10 +4,11 @@ import org.junit.jupiter.api.Test;
 import server.data.Header;
 import server.data.Method;
 import server.data.Request;
+import server.util.ByteChannels;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -17,13 +18,13 @@ class RequestParserTest {
         String input = "GET /existing-file HTTP/1.1\r\n" +
                 "Host: localhost:8080\r\n" +
                 "\r\n";
-        BufferedReader in = new BufferedReader(new StringReader(input));
+        ByteArrayInputStream in = inputStreamOf(input);
 
         Request request = RequestParser.parse(in);
 
         assertThat(request.method).isEqualTo(Method.GET);
         assertThat(request.uri).isEqualTo("/existing-file");
-        assertThat(request.body).isEqualTo("");
+        assertThat(ByteChannels.slurp(request.body)).isEqualTo("");
     }
 
     @Test
@@ -35,22 +36,22 @@ class RequestParserTest {
                 "lineOne\n" +
                 "lineTwo\n" +
                 "lineThree\n";
-        BufferedReader in = new BufferedReader(new StringReader(input));
+        ByteArrayInputStream in = inputStreamOf(input);
 
         Request request = RequestParser.parse(in);
 
         assertThat(request.method).isEqualTo(Method.PUT);
         assertThat(request.uri).isEqualTo("/existing-file");
         assertThat(request.headers).containsOnly(
-                entry("Host", "localhost:8080"),
+                entry(Header.HOST, "localhost:8080"),
                 entry(Header.CONTENT_LENGTH, "26")
         );
-        assertThat(request.body).isEqualTo("lineOne\nlineTwo\nlineThree\n");
+        assertThat(ByteChannels.slurp(request.body)).isEqualTo("lineOne\nlineTwo\nlineThree\n");
     }
 
     @Test
     void parse_requestWithNoInput() {
-        BufferedReader in = new BufferedReader(new StringReader(""));
+        ByteArrayInputStream in = inputStreamOf("");
 
         Throwable error = catchThrowable(() -> RequestParser.parse(in));
 
@@ -63,7 +64,7 @@ class RequestParserTest {
         String input = "INVALID /existing-file HTTP/1.1\r\n" +
                 "Host: localhost:8080\r\n" +
                 "\r\n";
-        BufferedReader in = new BufferedReader(new StringReader(input));
+        ByteArrayInputStream in = inputStreamOf(input);
 
         Throwable error = catchThrowable(() -> RequestParser.parse(in));
 
@@ -76,7 +77,7 @@ class RequestParserTest {
         String input = "PUT /existing-file HTTP/1.1\r\n" +
                 "Host: localhost:8080\r\n" +
                 "Content-Length: 26\r\n";
-        BufferedReader in = new BufferedReader(new StringReader(input));
+        ByteArrayInputStream in = inputStreamOf(input);
 
         Throwable error = catchThrowable(() -> RequestParser.parse(in));
 
@@ -85,25 +86,10 @@ class RequestParserTest {
     }
 
     @Test
-    void parse_requestWithInvalidContentLength() {
-        String input = "PUT /existing-file HTTP/1.1\r\n" +
-                "Host: localhost:8080\r\n" +
-                "Content-Length: invalid\r\n" +
-                "\r\n";
-        BufferedReader in = new BufferedReader(new StringReader(input));
-
-        Throwable error = catchThrowable(() -> RequestParser.parse(in));
-
-        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
-        assertThat(error).hasMessageContaining("Invalid Content-Length: invalid");
-    }
-
-    @Test
     void parse_requestWithInvalidHeader() {
         String input = "PUT /existing-file HTTP/1.1\r\n" +
                 "invalidHeader\r\n";
-
-        BufferedReader in = new BufferedReader(new StringReader(input));
+        ByteArrayInputStream in = inputStreamOf(input);
 
         Throwable error = catchThrowable(() -> RequestParser.parse(in));
 
@@ -111,18 +97,7 @@ class RequestParserTest {
         assertThat(error).hasMessageContaining("Invalid header: invalidHeader");
     }
 
-    @Test
-    void parse_requestWithMismatchedContentLength() {
-        String input = "PUT /existing-file HTTP/1.1\r\n" +
-                "Host: localhost:8080\r\n" +
-                "Content-Length: 20\r\n" +
-                "\r\n" +
-                "lessThanTwenty";
-        BufferedReader in = new BufferedReader(new StringReader(input));
-
-        Throwable error = catchThrowable(() -> RequestParser.parse(in));
-
-        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
-        assertThat(error).hasMessageContaining("Content-Length mismatched: body is not 20 byte(s)");
+    private ByteArrayInputStream inputStreamOf(String content) {
+        return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
     }
 }

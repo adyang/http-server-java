@@ -6,9 +6,9 @@ import server.data.Request;
 import server.data.Response;
 import server.data.Status;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -81,20 +81,20 @@ public class HttpServer {
 
     private void handle(Socket clientSocket) {
         try (Socket socket = clientSocket;
-             PrintStream out = new PrintStream(socket.getOutputStream(), false, StandardCharsets.UTF_8.name());
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
+             InputStream in = new BufferedInputStream(socket.getInputStream());
+             PrintStream out = new PrintStream(socket.getOutputStream(), false, StandardCharsets.UTF_8.name())) {
             handleConnection(in, out);
         } catch (Exception e) {
             logger.error("Unable to complete error handling of connection.", e);
         }
     }
 
-    private void handleConnection(BufferedReader in, PrintStream out) {
+    private void handleConnection(InputStream in, PrintStream out) {
         try {
             Request request = RequestParser.parse(in);
             Response response = handler.handle(request);
             ResponseComposer.compose(out, response);
-        } catch (RequestParser.ParseException e) {
+        } catch (RequestParser.ParseException | LineReader.InvalidLineException e) {
             ResponseComposer.compose(out, new Response(Status.BAD_REQUEST, e.getMessage() + System.lineSeparator()));
         } catch (RequestParser.InvalidMethodException e) {
             ResponseComposer.compose(out, new Response(Status.NOT_IMPLEMENTED, e.getMessage() + System.lineSeparator()));

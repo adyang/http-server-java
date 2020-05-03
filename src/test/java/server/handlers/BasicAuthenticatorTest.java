@@ -10,7 +10,6 @@ import server.data.Response;
 import server.data.Status;
 import server.util.TestHandler;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -33,7 +32,7 @@ public class BasicAuthenticatorTest {
     }
 
     @Test
-    void protectedPath_noAuthorizationHeader() throws IOException {
+    void protectedPath_noAuthorizationHeader() {
         Request request = new Request(Method.GET, "/protected");
 
         Response response = authenticator.handle(request);
@@ -43,10 +42,10 @@ public class BasicAuthenticatorTest {
     }
 
     @Test
-    void protectedPath_authorizationHeader_withValidCredentials() throws IOException {
+    void protectedPath_authorizationHeader_withValidCredentials() {
         String basicCookie = Base64.getEncoder().encodeToString("admin:password".getBytes(StandardCharsets.UTF_8));
         Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
-        Request request = new Request(Method.GET, "/protected", headers, "");
+        Request request = new Request(Method.GET, "/protected", headers);
 
         Response response = authenticator.handle(request);
 
@@ -55,10 +54,10 @@ public class BasicAuthenticatorTest {
     }
 
     @Test
-    void protectedPath_authorizationHeader_withInvalidCredentials() throws IOException {
+    void protectedPath_authorizationHeader_withInvalidCredentials() {
         String basicCookie = Base64.getEncoder().encodeToString("admin:wrong".getBytes(StandardCharsets.UTF_8));
         Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
-        Request request = new Request(Method.GET, "/protected", headers, "");
+        Request request = new Request(Method.GET, "/protected", headers);
 
         Response response = authenticator.handle(request);
 
@@ -68,9 +67,9 @@ public class BasicAuthenticatorTest {
     }
 
     @Test
-    void protectedPath_malformedAuthorizationHeader() throws IOException {
+    void protectedPath_malformedAuthorizationHeader() {
         Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "BasicNoSpaceOnlyOneToken");
-        Request request = new Request(Method.GET, "/protected", headers, "");
+        Request request = new Request(Method.GET, "/protected", headers);
 
         Response response = authenticator.handle(request);
 
@@ -79,10 +78,10 @@ public class BasicAuthenticatorTest {
     }
 
     @Test
-    void protectedPath_malformedCredentials() throws IOException {
+    void protectedPath_malformedCredentials() {
         String basicCookie = Base64.getEncoder().encodeToString("userNoColon".getBytes(StandardCharsets.UTF_8));
         Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
-        Request request = new Request(Method.GET, "/protected", headers, "");
+        Request request = new Request(Method.GET, "/protected", headers);
 
         Response response = authenticator.handle(request);
 
@@ -91,8 +90,8 @@ public class BasicAuthenticatorTest {
     }
 
     @Test
-    void unprotectedPath() throws IOException {
-        Request request = new Request(Method.GET, "/unprotected", "");
+    void unprotectedPath() {
+        Request request = new Request(Method.GET, "/unprotected");
 
         Response response = authenticator.handle(request);
 

@@ -16,13 +16,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -83,46 +80,6 @@ public class HttpServerTest {
             assertThat(in.readLine()).isEqualTo("");
             assertThat(in.readLine()).isEqualTo("Hello World!");
         }
-    }
-
-    @Test
-    @Timeout(value = 30)
-    void getRequest_largeResource() throws IOException {
-        createLargeFile("large-file", 31);
-        try (Socket socket = new Socket(HOST, PORT);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            out.printf("GET /large-file HTTP/1.1\r\n");
-            out.printf("Host: %s:%s\r\n", HOST, PORT);
-            out.printf("\r\n");
-
-            assertThat(in.readLine()).isEqualTo("HTTP/1.1 200 OK");
-            assertThat(in.readLine()).isEqualTo("Content-Length: " + (1L << 31));
-            assertThat(in.readLine()).isEqualTo("");
-            assertThat(countRemainingBytes(in)).isEqualTo(1L << 31);
-        }
-    }
-
-    private void createLargeFile(String fileName, int powerOfTwoSize) throws IOException {
-        int initialPowerSize = 25;
-        try (FileChannel fc = FileChannel.open(directory.resolve(fileName), StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-            String a = String.join("", Collections.nCopies(1 << initialPowerSize, "a"));
-            fc.write(StandardCharsets.UTF_8.encode(a));
-        }
-        try (FileChannel rfc = FileChannel.open(directory.resolve(fileName));
-             FileChannel wfc = FileChannel.open(directory.resolve(fileName), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-            for (int i = 0; i < powerOfTwoSize - initialPowerSize; i++) {
-                rfc.transferTo(0, Long.MAX_VALUE, wfc);
-            }
-        }
-    }
-
-    private long countRemainingBytes(BufferedReader in) throws IOException {
-        char[] buffer = new char[1 << 13];
-        long totalBytes = 0;
-        int length;
-        while ((length = in.read(buffer)) != -1) totalBytes += length;
-        return totalBytes;
     }
 
     @Test

@@ -2,23 +2,22 @@ package server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import server.data.Header;
 import server.data.Method;
 import server.data.Request;
 
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.Map;
 
 public class RequestParser {
     private static final Logger logger = LoggerFactory.getLogger(RequestParser.class);
 
-    static Request parse(BufferedReader in) throws IOException {
-        Request request = parseRequestLine(in.readLine());
+    static Request parse(InputStream in) throws IOException {
+        Request request = parseRequestLine(LineReader.readLine(in));
         request.headers = parseHeaders(in);
-        int contentLength = parseContentLength(request.headers);
-        request.body = parseBody(in, contentLength);
+        request.body = Channels.newChannel(in);
         return request;
     }
 
@@ -37,34 +36,16 @@ public class RequestParser {
         }
     }
 
-    private static Map<String, String> parseHeaders(BufferedReader in) throws IOException {
+    private static Map<String, String> parseHeaders(InputStream in) throws IOException {
         Map<String, String> headers = new HashMap<>();
         String line;
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
+        while ((line = LineReader.readLine(in)) != null && !line.isEmpty()) {
             String[] header = line.split(":", 2);
             if (header.length != 2) throw new ParseException("Invalid header: " + line);
             headers.put(header[0], header[1].trim());
         }
         if (line == null) throw new ParseException("Malformed request: missing blank line after header(s)");
         return headers;
-    }
-
-    private static int parseContentLength(Map<String, String> headers) {
-        String contentLength = headers.getOrDefault(Header.CONTENT_LENGTH, "0");
-        try {
-            return Integer.parseInt(contentLength);
-        } catch (NumberFormatException e) {
-            throw new ParseException("Invalid Content-Length: " + contentLength);
-        }
-    }
-
-    private static String parseBody(BufferedReader in, int contentLength) throws IOException {
-        if (contentLength == 0) return "";
-        char[] buffer = new char[contentLength];
-        int lengthRead = in.read(buffer, 0, contentLength);
-        if (lengthRead != contentLength)
-            throw new ParseException("Content-Length mismatched: body is not " + contentLength + " byte(s)");
-        return String.valueOf(buffer);
     }
 
     public static class ParseException extends RuntimeException {
