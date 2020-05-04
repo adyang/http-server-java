@@ -3,6 +3,7 @@ package server;
 import org.junit.jupiter.api.Test;
 import server.data.Response;
 import server.data.Status;
+import server.util.Maps;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,11 +12,8 @@ import java.io.PrintStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -84,10 +82,10 @@ class ResponseComposerTest {
     @Test
     void compose_headersPresent() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Map<String, Object> headers = Stream.of(
-                new AbstractMap.SimpleImmutableEntry<>("headerOne", "valueOne"),
-                new AbstractMap.SimpleImmutableEntry<>("headerTwo", 2L)
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, Object> headers = Maps.of(
+                "headerOne", "valueOne",
+                "headerTwo", 2L
+        );
 
         ResponseComposer.compose(new PrintStream(output), new Response(Status.OK, headers, ""));
 

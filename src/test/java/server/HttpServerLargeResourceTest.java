@@ -10,6 +10,7 @@ import server.data.Method;
 import server.handlers.Dispatcher;
 import server.handlers.GetHandler;
 import server.handlers.PutHandler;
+import server.util.Maps;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,14 +23,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,10 +49,10 @@ public class HttpServerLargeResourceTest {
 
     @BeforeEach
     void setUp() {
-        Map<Method, Handler> routes = Stream.of(
-                new AbstractMap.SimpleImmutableEntry<>(Method.GET, new GetHandler(directory)),
-                new AbstractMap.SimpleImmutableEntry<>(Method.PUT, new PutHandler(directory))
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Method, Handler> routes = Maps.of(
+                Method.GET, new GetHandler(directory),
+                Method.PUT, new PutHandler(directory)
+        );
         Handler appHandler = new Dispatcher(routes);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         server = new HttpServer(PORT, appHandler, executor, Duration.ofSeconds(5), Duration.ofMillis(10));

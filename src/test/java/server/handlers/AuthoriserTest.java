@@ -8,25 +8,20 @@ import server.data.Method;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
+import server.util.Maps;
 import server.util.TestHandler;
 
-import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AuthoriserTest {
-    private static final Map<String, Map<String, List<Method>>> ACCESS_CONTROL_LIST = Stream.of(
-            new AbstractMap.SimpleImmutableEntry<>("admin", singletonMap("/protected", asList(Method.GET, Method.PUT))),
-            new AbstractMap.SimpleImmutableEntry<String, Map<String, List<Method>>>("anonymous", emptyMap())
-    ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    private static final Map<String, Map<String, List<Method>>> ACCESS_CONTROL_LIST = Maps.of(
+            "admin", Maps.of("/protected", asList(Method.GET, Method.PUT)),
+            "anonymous", Maps.of()
+    );
     private static final List<Method> DEFAULT_ACCESS = asList(Method.GET, Method.HEAD, Method.OPTIONS);
 
     private TestHandler handler;
@@ -39,7 +34,7 @@ public class AuthoriserTest {
     }
 
     @Test
-    void userInAcl_configuredPath_allowedMethod() throws IOException {
+    void userInAcl_configuredPath_allowedMethod() {
         Request request = new Request(Method.GET, "/protected");
         request.user = "admin";
 
@@ -49,7 +44,7 @@ public class AuthoriserTest {
     }
 
     @Test
-    void userInAcl_configuredPath_disallowedMethod() throws IOException {
+    void userInAcl_configuredPath_disallowedMethod() {
         Request request = new Request(Method.DELETE, "/protected");
         request.user = "admin";
 
@@ -60,7 +55,7 @@ public class AuthoriserTest {
     }
 
     @Test
-    void userInAcl_nonConfiguredPath_allowedMethod() throws IOException {
+    void userInAcl_nonConfiguredPath_allowedMethod() {
         Request request = new Request(Method.GET, "/others");
         request.user = "anonymous";
 
@@ -70,7 +65,7 @@ public class AuthoriserTest {
     }
 
     @Test
-    void userInAcl_nonConfiguredPath_disallowedMethod() throws IOException {
+    void userInAcl_nonConfiguredPath_disallowedMethod() {
         Request request = new Request(Method.DELETE, "/others");
         request.user = "anonymous";
 
@@ -81,7 +76,7 @@ public class AuthoriserTest {
     }
 
     @Test
-    void userNotInAcl() throws IOException {
+    void userNotInAcl() {
         Request request = new Request(Method.GET, "/any");
         request.user = "notInAcl";
 

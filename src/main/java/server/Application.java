@@ -10,29 +10,26 @@ import server.handlers.GetHandler;
 import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
 import server.handlers.PutHandler;
+import server.util.Maps;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonMap;
 
 public class Application {
-    private static final Map<String, Map<String, List<Method>>> ACCESS_CONTROL_LIST = Stream.of(
-            new AbstractMap.SimpleImmutableEntry<>("admin", singletonMap("/logs", asList(Method.GET, Method.HEAD, Method.OPTIONS))),
-            new AbstractMap.SimpleImmutableEntry<String, Map<String, List<Method>>>("anonymous", singletonMap("/logs", emptyList()))
-    ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    private static final Map<String, Map<String, List<Method>>> ACCESS_CONTROL_LIST = Maps.of(
+            "admin", Maps.of("/logs", asList(Method.GET, Method.HEAD, Method.OPTIONS)),
+            "anonymous", Maps.of("/logs", emptyList()));
     private static final List<Method> DEFAULT_ACCESS = asList(Method.GET, Method.HEAD, Method.OPTIONS, Method.PUT, Method.DELETE);
     private static final String REALM = "default";
-    private static final Map<String, String> CREDENTIALS_STORE = singletonMap("admin", "hunter2");
-    private static final Map<String, List<Method>> ALLOWED_METHODS = singletonMap(
+    private static final Map<String, String> CREDENTIALS_STORE = Maps.of("admin", "hunter2");
+    private static final Map<String, List<Method>> ALLOWED_METHODS = Maps.of(
             "/logs", asList(Method.GET, Method.HEAD, Method.OPTIONS)
     );
     private static final Duration SO_TIMEOUT = Duration.ofSeconds(20);
@@ -54,12 +51,12 @@ public class Application {
     }
 
     private static Map<Method, Handler> routes(Path directory) {
-        return Stream.of(
-                new AbstractMap.SimpleImmutableEntry<>(Method.HEAD, new HeadHandler(directory)),
-                new AbstractMap.SimpleImmutableEntry<>(Method.GET, new GetHandler(directory)),
-                new AbstractMap.SimpleImmutableEntry<>(Method.PUT, new PutHandler(directory)),
-                new AbstractMap.SimpleImmutableEntry<>(Method.DELETE, new DeleteHandler(directory))
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return Maps.of(
+                Method.HEAD, new HeadHandler(directory),
+                Method.GET, new GetHandler(directory),
+                Method.PUT, new PutHandler(directory),
+                Method.DELETE, new DeleteHandler(directory)
+        );
     }
 
     private static List<String> protectedPathsFrom(Map<String, Map<String, List<Method>>> accessControlList) {

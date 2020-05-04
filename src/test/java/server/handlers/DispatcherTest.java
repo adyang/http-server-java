@@ -6,23 +6,20 @@ import server.data.Method;
 import server.data.Request;
 import server.data.Response;
 import server.data.Status;
+import server.util.Maps;
 
-import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DispatcherTest {
-    public static final Map<Method, Handler> ROUTES = Stream.of(
-            new AbstractMap.SimpleImmutableEntry<>(Method.GET, echoMethod(Method.GET)),
-            new AbstractMap.SimpleImmutableEntry<>(Method.PUT, echoMethod(Method.PUT))
-    ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    public static final Map<Method, Handler> ROUTES = Maps.of(
+            Method.GET, echoMethod(Method.GET),
+            Method.PUT, echoMethod(Method.PUT)
+    );
 
     @Test
-    void methodPresentInRoutes() throws IOException {
+    void methodPresentInRoutes() {
         Dispatcher dispatcher = new Dispatcher(ROUTES);
 
         Response response = dispatcher.handle(new Request(Method.GET, "/path"));
@@ -31,7 +28,7 @@ public class DispatcherTest {
     }
 
     @Test
-    void methodAbsentInRoutes() throws IOException {
+    void methodAbsentInRoutes() {
         Dispatcher dispatcher = new Dispatcher(ROUTES);
 
         Response response = dispatcher.handle(new Request(Method.DELETE, "/path"));
