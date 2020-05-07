@@ -38,6 +38,7 @@ public class MapsTest {
     void immutable_twoToTenEntries(Object[] inputs, Class<?>[] parameterTypes, Map.Entry<String, Integer>[] expectedEntries) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method mapsOf = Maps.class.getMethod("of", parameterTypes);
 
+        @SuppressWarnings("unchecked")
         Map<String, Integer> map = (Map<String, Integer>) mapsOf.invoke(null, inputs);
 
         assertThat(map).containsOnly(expectedEntries);
@@ -67,6 +68,7 @@ public class MapsTest {
     void mutable_twoToTenEntries(Object[] inputs, Class<?>[] parameterTypes, Map.Entry<String, Integer>[] expectedEntries) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method mapsMutableOf = Maps.class.getMethod("mutableOf", parameterTypes);
 
+        @SuppressWarnings("unchecked")
         Map<String, Integer> map = (Map<String, Integer>) mapsMutableOf.invoke(null, inputs);
 
         assertThat(map).containsOnly(expectedEntries);
@@ -86,6 +88,7 @@ public class MapsTest {
     private static Arguments argumentsForCaseWith(List<Map.Entry<String, Integer>> currEntries) {
         Object[] inputs = currEntries.stream().flatMap(e -> Stream.of(e.getKey(), e.getValue())).toArray();
         Class<?>[] parameterTypes = Collections.nCopies(inputs.length, Object.class).toArray(new Class<?>[0]);
+        @SuppressWarnings("unchecked")
         Map.Entry<String, Integer>[] expectedEntries = currEntries.toArray(new Map.Entry[0]);
         return Arguments.of(inputs, parameterTypes, expectedEntries);
     }
