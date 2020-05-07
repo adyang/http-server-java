@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import server.data.Method;
+import server.data.PatternHandler;
 import server.handlers.Dispatcher;
 import server.handlers.GetHandler;
 import server.handlers.PutHandler;
@@ -24,11 +25,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Timeout(value = 1, unit = TimeUnit.MINUTES)
@@ -49,10 +52,9 @@ public class HttpServerLargeResourceTest {
 
     @BeforeEach
     void setUp() {
-        Map<Method, Handler> routes = Maps.of(
-                Method.GET, new GetHandler(directory),
-                Method.PUT, new PutHandler(directory)
-        );
+        Map<Method, List<PatternHandler>> routes = Maps.of(
+                Method.GET, singletonList(new PatternHandler("*", new GetHandler(directory))),
+                Method.PUT, singletonList(new PatternHandler("*", new PutHandler(directory))));
         Handler appHandler = new Dispatcher(routes);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         server = new HttpServer(PORT, appHandler, executor, Duration.ofSeconds(5), Duration.ofMillis(10));

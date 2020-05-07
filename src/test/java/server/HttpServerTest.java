@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import server.data.Method;
+import server.data.PatternHandler;
 import server.handlers.Dispatcher;
 import server.handlers.GetHandler;
+import server.util.Maps;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,11 +22,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static java.util.Collections.singletonMap;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -45,7 +48,8 @@ public class HttpServerTest {
 
     @BeforeEach
     void setUp() {
-        Map<Method, Handler> routes = singletonMap(Method.GET, new GetHandler(directory));
+        Map<Method, List<PatternHandler>> routes = Maps.of(
+                Method.GET, singletonList(new PatternHandler("*", new GetHandler(directory))));
         Handler appHandler = new Dispatcher(routes);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         server = new HttpServer(PORT, appHandler, executor, Duration.ofSeconds(5), Duration.ofMillis(10));

@@ -1,6 +1,7 @@
 package server;
 
 import server.data.Method;
+import server.data.PatternHandler;
 import server.handlers.Authoriser;
 import server.handlers.BasicAuthenticator;
 import server.handlers.DefaultResponseHeaderWrapper;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 public class Application {
     private static final Map<String, Map<String, List<Method>>> ACCESS_CONTROL_LIST = Maps.of(
@@ -50,12 +52,12 @@ public class Application {
         Runtime.getRuntime().addShutdownHook(new Thread(httpServer::stop));
     }
 
-    private static Map<Method, Handler> routes(Path directory) {
+    private static Map<Method, List<PatternHandler>> routes(Path directory) {
         return Maps.of(
-                Method.HEAD, new HeadHandler(directory),
-                Method.GET, new GetHandler(directory),
-                Method.PUT, new PutHandler(directory),
-                Method.DELETE, new DeleteHandler(directory)
+                Method.HEAD, singletonList(new PatternHandler("*", new HeadHandler(directory))),
+                Method.GET, singletonList(new PatternHandler("*", new GetHandler(directory))),
+                Method.PUT, singletonList(new PatternHandler("*", new PutHandler(directory))),
+                Method.DELETE, singletonList(new PatternHandler("*", new DeleteHandler(directory)))
         );
     }
 
