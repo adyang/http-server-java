@@ -11,6 +11,7 @@ public enum Status {
     REQUEST_TIMEOUT(408, "Request Timeout"),
     CONFLICT(409, "Conflict"),
     REQUESTED_RANGE_NOT_SATISFIABLE(416, "Requested Range Not Satisfiable"),
+    I_AM_A_TEAPOT(418, "I'm a teapot"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
     NOT_IMPLEMENTED(501, "Not Implemented");
 

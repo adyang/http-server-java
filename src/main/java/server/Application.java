@@ -11,6 +11,7 @@ import server.handlers.GetHandler;
 import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
 import server.handlers.PutHandler;
+import server.handlers.TeapotHandler;
 import server.util.Maps;
 
 import java.nio.file.Path;
@@ -55,7 +56,10 @@ public class Application {
     private static Map<Method, List<PatternHandler>> routes(Path directory) {
         return Maps.of(
                 Method.HEAD, singletonList(new PatternHandler("*", new HeadHandler(directory))),
-                Method.GET, singletonList(new PatternHandler("*", new GetHandler(directory))),
+                Method.GET, asList(
+                        new PatternHandler("/coffee", TeapotHandler::handleCoffee),
+                        new PatternHandler("/tea", TeapotHandler::handleTea),
+                        new PatternHandler("*", new GetHandler(directory))),
                 Method.PUT, singletonList(new PatternHandler("*", new PutHandler(directory))),
                 Method.DELETE, singletonList(new PatternHandler("*", new DeleteHandler(directory)))
         );
