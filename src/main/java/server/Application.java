@@ -11,6 +11,7 @@ import server.handlers.GetHandler;
 import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
 import server.handlers.PutHandler;
+import server.handlers.RedirectHandler;
 import server.handlers.TeapotHandler;
 import server.util.Maps;
 
@@ -57,6 +58,7 @@ public class Application {
         return Maps.of(
                 Method.HEAD, singletonList(new PatternHandler("*", new HeadHandler(directory))),
                 Method.GET, asList(
+                        new PatternHandler("/redirect", new RedirectHandler("/")),
                         new PatternHandler("/coffee", TeapotHandler::handleCoffee),
                         new PatternHandler("/tea", TeapotHandler::handleTea),
                         new PatternHandler("*", new GetHandler(directory))),
