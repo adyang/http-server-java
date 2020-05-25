@@ -37,7 +37,7 @@ public class GetHandler implements Handler {
 
     @Override
     public Response handle(Request request) {
-        Path resource = directory.resolve(request.uri.substring(1));
+        Path resource = directory.resolve(request.path.substring(1));
         if (Files.isRegularFile(resource)) {
             return getFile(request, resource);
         } else if (Files.isDirectory(resource)) {
@@ -149,10 +149,10 @@ public class GetHandler implements Handler {
     private static Response getDirectoryListing(Request request, Path resource) {
         String listing = directoryListingOf(resource)
                 .map(Path::getFileName)
-                .map(f -> String.format("<li><a href=\"%s\">%s</a></li>", linkOf(request.uri, f), f))
+                .map(f -> String.format("<li><a href=\"%s\">%s</a></li>", linkOf(request.path, f), f))
                 .collect(Collectors.joining());
         String directoryTemplate = Resources.slurp("/directory.html");
-        String directoryListing = String.format(directoryTemplate, request.uri, listing);
+        String directoryListing = String.format(directoryTemplate, request.path, listing);
         Map<String, Object> headers = new HashMap<>();
         headers.put(Header.CONTENT_LENGTH, directoryListing.length());
         headers.put(Header.CONTENT_TYPE, "text/html");

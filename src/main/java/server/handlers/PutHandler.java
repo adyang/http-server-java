@@ -30,7 +30,7 @@ public class PutHandler implements Handler {
 
     @Override
     public Response handle(Request request) {
-        Path resource = directory.resolve(request.uri.substring(1));
+        Path resource = directory.resolve(request.path.substring(1));
         try {
             long contentLength = parseContentLength(request.headers);
             return put(resource, request.body, contentLength);

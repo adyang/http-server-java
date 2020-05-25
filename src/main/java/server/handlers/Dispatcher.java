@@ -29,7 +29,7 @@ public class Dispatcher implements Handler {
     }
 
     private boolean matches(String pattern, Request request) {
-        return pattern.equals(request.uri) || pattern.equals(WILDCARD);
+        return pattern.equals(request.path) || pattern.equals(WILDCARD);
     }
 
 }

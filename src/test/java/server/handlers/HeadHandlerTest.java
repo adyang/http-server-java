@@ -28,7 +28,7 @@ public class HeadHandlerTest {
     }
 
     @Test
-    void head_absentResource() throws IOException {
+    void head_absentResource() {
         Request request = new Request(Method.HEAD, "/does-not-exists");
 
         Response response = handler.handle(request);

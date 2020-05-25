@@ -35,7 +35,7 @@ public class Authoriser implements Handler {
 
     private Response authorise(Request request) {
         Map<String, List<Method>> accessControl = accessControlList.get(request.user);
-        List<Method> allowedMethods = accessControl.getOrDefault(request.uri, defaultAccess);
+        List<Method> allowedMethods = accessControl.getOrDefault(request.path, defaultAccess);
         if (allowedMethods.contains(request.method))
             return handler.handle(request);
         else {

@@ -43,9 +43,10 @@ public class BasicAuthenticatorTest {
 
     @Test
     void protectedPath_authorizationHeader_withValidCredentials() {
+        Request request = new Request(Method.GET, "/protected");
         String basicCookie = Base64.getEncoder().encodeToString("admin:password".getBytes(StandardCharsets.UTF_8));
-        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
-        Request request = new Request(Method.GET, "/protected", headers);
+        request.headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
+
 
         Response response = authenticator.handle(request);
 
@@ -55,9 +56,10 @@ public class BasicAuthenticatorTest {
 
     @Test
     void protectedPath_authorizationHeader_withInvalidCredentials() {
+        Request request = new Request(Method.GET, "/protected");
         String basicCookie = Base64.getEncoder().encodeToString("admin:wrong".getBytes(StandardCharsets.UTF_8));
-        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
-        Request request = new Request(Method.GET, "/protected", headers);
+        request.headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
+
 
         Response response = authenticator.handle(request);
 
@@ -68,8 +70,9 @@ public class BasicAuthenticatorTest {
 
     @Test
     void protectedPath_malformedAuthorizationHeader() {
-        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "BasicNoSpaceOnlyOneToken");
-        Request request = new Request(Method.GET, "/protected", headers);
+        Request request = new Request(Method.GET, "/protected");
+        request.headers = singletonMap(Header.AUTHORIZATION, "BasicNoSpaceOnlyOneToken");
+
 
         Response response = authenticator.handle(request);
 
@@ -79,9 +82,10 @@ public class BasicAuthenticatorTest {
 
     @Test
     void protectedPath_malformedCredentials() {
+        Request request = new Request(Method.GET, "/protected");
         String basicCookie = Base64.getEncoder().encodeToString("userNoColon".getBytes(StandardCharsets.UTF_8));
-        Map<String, String> headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
-        Request request = new Request(Method.GET, "/protected", headers);
+        request.headers = singletonMap(Header.AUTHORIZATION, "Basic " + basicCookie);
+
 
         Response response = authenticator.handle(request);
 

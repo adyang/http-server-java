@@ -23,7 +23,7 @@ class RequestParserTest {
         Request request = RequestParser.parse(in);
 
         assertThat(request.method).isEqualTo(Method.GET);
-        assertThat(request.uri).isEqualTo("/existing-file");
+        assertThat(request.path).isEqualTo("/existing-file");
         assertThat(ByteChannels.slurp(request.body)).isEqualTo("");
     }
 
@@ -41,12 +41,26 @@ class RequestParserTest {
         Request request = RequestParser.parse(in);
 
         assertThat(request.method).isEqualTo(Method.PUT);
-        assertThat(request.uri).isEqualTo("/existing-file");
+        assertThat(request.path).isEqualTo("/existing-file");
         assertThat(request.headers).containsOnly(
                 entry(Header.HOST, "localhost:8080"),
                 entry(Header.CONTENT_LENGTH, "26")
         );
         assertThat(ByteChannels.slurp(request.body)).isEqualTo("lineOne\nlineTwo\nlineThree\n");
+    }
+
+    @Test
+    void parse_requestWithQuery() throws IOException {
+        String input = "GET /existing-file?key=value+one%24 HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "\r\n";
+        ByteArrayInputStream in = inputStreamOf(input);
+
+        Request request = RequestParser.parse(in);
+
+        assertThat(request.method).isEqualTo(Method.GET);
+        assertThat(request.path).isEqualTo("/existing-file");
+        assertThat(request.query).isEqualTo("key=value+one%24");
     }
 
     @Test
@@ -70,6 +84,19 @@ class RequestParserTest {
 
         assertThat(error).isInstanceOf(RequestParser.InvalidMethodException.class);
         assertThat(error).hasMessageContaining("Invalid method: INVALID");
+    }
+
+    @Test
+    void parse_requestWithInvalidTarget() {
+        String input = "GET :invalid HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "\r\n";
+        ByteArrayInputStream in = inputStreamOf(input);
+
+        Throwable error = catchThrowable(() -> RequestParser.parse(in));
+
+        assertThat(error).isInstanceOf(RequestParser.ParseException.class);
+        assertThat(error).hasMessageContaining("Invalid request target: :invalid");
     }
 
     @Test

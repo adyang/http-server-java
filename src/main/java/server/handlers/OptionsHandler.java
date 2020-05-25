@@ -27,7 +27,7 @@ public class OptionsHandler implements Handler {
     public Response handle(Request request) {
         if (request.method != Method.OPTIONS) return handler.handle(request);
 
-        List<Method> methods = allowedMethods.getOrDefault(request.uri, defaultMethods);
+        List<Method> methods = allowedMethods.getOrDefault(request.path, defaultMethods);
         return new Response(Status.OK,
                 Collections.singletonMap(Header.ALLOW, commaDelimited(methods)),
                 "");

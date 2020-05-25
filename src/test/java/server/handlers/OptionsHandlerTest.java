@@ -11,7 +11,6 @@ import server.data.Response;
 import server.data.Status;
 import server.util.TestHandler;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +33,7 @@ class OptionsHandlerTest {
     }
 
     @Test
-    void options_configuredPath() throws IOException {
+    void options_configuredPath() {
         Request request = new Request(Method.OPTIONS, "/onlyGet");
 
         Response response = handler.handle(request);
@@ -45,7 +44,7 @@ class OptionsHandlerTest {
     }
 
     @Test
-    void options_nonConfiguredPath() throws IOException {
+    void options_nonConfiguredPath() {
         Request request = new Request(Method.OPTIONS, "/others");
 
         Response response = handler.handle(request);
@@ -56,7 +55,7 @@ class OptionsHandlerTest {
     }
 
     @Test
-    void otherMethods() throws IOException {
+    void otherMethods() {
         Request request = new Request(Method.GET, "/others");
 
         Response response = handler.handle(request);

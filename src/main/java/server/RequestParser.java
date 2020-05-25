@@ -7,6 +7,8 @@ import server.data.Request;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +27,9 @@ public class RequestParser {
         logger.info("[Request] '{}'", line);
         if (line == null) throw new ParseException("Malformed request: missing request line");
         String[] tokens = line.split(" ");
-        return new Request(parseMethod(tokens[0]), tokens[1]);
+        Method method = parseMethod(tokens[0]);
+        URI target = parseTarget(tokens[1]);
+        return new Request(method, target.getPath(), target.getRawQuery());
     }
 
     private static Method parseMethod(String methodToken) {
@@ -33,6 +37,14 @@ public class RequestParser {
             return Method.valueOf(methodToken);
         } catch (IllegalArgumentException e) {
             throw new InvalidMethodException("Invalid method: " + methodToken);
+        }
+    }
+
+    private static URI parseTarget(String targetToken) {
+        try {
+            return new URI(targetToken);
+        } catch (URISyntaxException e) {
+            throw new ParseException("Invalid request target: " + targetToken);
         }
     }
 

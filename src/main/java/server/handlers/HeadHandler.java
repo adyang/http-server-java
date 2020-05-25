@@ -22,7 +22,7 @@ public class HeadHandler implements Handler {
 
     @Override
     public Response handle(Request request) {
-        Path resource = directory.resolve(request.uri.substring(1));
+        Path resource = directory.resolve(request.path.substring(1));
         if (Files.exists(resource)) {
             Map<String, Object> headers = Collections.singletonMap(Header.CONTENT_LENGTH, sizeOf(resource));
             return new Response(Status.OK, headers, "");

@@ -27,7 +27,7 @@ public class BasicAuthenticator implements Handler {
 
     @Override
     public Response handle(Request request) {
-        if (!protectedPaths.contains(request.uri)) {
+        if (!protectedPaths.contains(request.path)) {
             request.user = "anonymous";
             return handler.handle(request);
         }

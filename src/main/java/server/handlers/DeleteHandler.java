@@ -19,7 +19,7 @@ public class DeleteHandler implements Handler {
 
     @Override
     public Response handle(Request request) {
-        Path resource = directory.resolve(request.uri.substring(1));
+        Path resource = directory.resolve(request.path.substring(1));
         if (Files.isDirectory(resource)) {
             return new Response(Status.CONFLICT, "Unable to delete: " + resource.getFileName() + " is a directory.");
         } else {

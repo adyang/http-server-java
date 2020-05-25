@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -136,8 +135,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_startAndEndPresent() throws IOException {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-10");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=6-10");
 
         Response response = handler.handle(request);
 
@@ -151,8 +150,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_startAndEndPresent_endLargerThanLengthOfResource() throws IOException {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-18");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=6-18");
 
         Response response = handler.handle(request);
 
@@ -167,8 +166,8 @@ public class GetHandlerTest {
     @Test
     void get_partialContent_startAndEndPresent_largeNumbers() {
         String byteRange = String.format("bytes=%d-%d", (Integer.MAX_VALUE + 1L), (Integer.MAX_VALUE + 2L));
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, byteRange);
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, byteRange);
 
         Response response = handler.handle(request);
 
@@ -180,8 +179,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_startPresentOnly() throws IOException {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=6-");
 
         Response response = handler.handle(request);
 
@@ -195,8 +194,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_endPresentOnly() throws IOException {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-3");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=-3");
 
         Response response = handler.handle(request);
 
@@ -210,8 +209,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_startEqualToLengthOfResource() {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=12-");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=12-");
 
         Response response = handler.handle(request);
 
@@ -223,8 +222,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_startGreaterThanLengthOfResource() {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=13-");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=13-");
 
         Response response = handler.handle(request);
 
@@ -236,8 +235,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_startGreaterThanEnd() {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=6-1");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=6-1");
 
         Response response = handler.handle(request);
 
@@ -249,8 +248,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_endPresentOnly_isZero() {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-0");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=-0");
 
         Response response = handler.handle(request);
 
@@ -262,8 +261,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_endPresentOnly_largerThanLengthOfResource() throws IOException {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-13");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=-13");
 
         Response response = handler.handle(request);
 
@@ -277,8 +276,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_invalidByteRange() {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "bytes=-");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "bytes=-");
 
         Response response = handler.handle(request);
 
@@ -290,8 +289,8 @@ public class GetHandlerTest {
 
     @Test
     void get_partialContent_unknownByteUnit() throws IOException {
-        Map<String, String> headers = Collections.singletonMap(Header.RANGE, "unknown=0-3");
-        Request request = new Request(Method.GET, "/existing-file", headers);
+        Request request = new Request(Method.GET, "/existing-file");
+        request.headers = Collections.singletonMap(Header.RANGE, "unknown=0-3");
 
         Response response = handler.handle(request);
 
