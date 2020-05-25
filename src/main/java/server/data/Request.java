@@ -11,6 +11,7 @@ public class Request {
     public Map<String, String> headers;
     public ReadableByteChannel body;
     public String user;
+    public Map<String, String> parameters;
 
     public Request(Method method, String path) {
         this(method, path, null);

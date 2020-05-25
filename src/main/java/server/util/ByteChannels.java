@@ -1,6 +1,7 @@
 package server.util;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -9,15 +10,23 @@ public class ByteChannels {
     private static final int BUFFER_SIZE = 1024;
     private static final int EOS = -1;
 
-    public static String slurp(ReadableByteChannel rbc) throws IOException {
+    public static String slurp(ReadableByteChannel rbc) {
         StringBuilder builder = new StringBuilder();
         ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-        while (rbc.read(buffer) != EOS) {
+        while (readInto(rbc, buffer) != EOS) {
             buffer.flip();
             builder.append(StandardCharsets.UTF_8.decode(buffer).toString());
             buffer.clear();
         }
         return builder.toString();
+    }
+
+    private static int readInto(ReadableByteChannel rbc, ByteBuffer buffer) {
+        try {
+            return rbc.read(buffer);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static ReadableByteChannel limit(ReadableByteChannel rbc, long limit) {

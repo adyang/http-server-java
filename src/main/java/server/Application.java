@@ -10,6 +10,7 @@ import server.handlers.Dispatcher;
 import server.handlers.GetHandler;
 import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
+import server.handlers.ParametersWrapper;
 import server.handlers.PutHandler;
 import server.handlers.RedirectHandler;
 import server.handlers.TeapotHandler;
@@ -43,6 +44,7 @@ public class Application {
         System.setProperty("logDir", arguments.directory);
 
         Handler appHandler = new Dispatcher(routes(Paths.get(arguments.directory)));
+        appHandler = new ParametersWrapper(appHandler);
         appHandler = new Authoriser(appHandler, ACCESS_CONTROL_LIST, DEFAULT_ACCESS);
         appHandler = new BasicAuthenticator(appHandler, REALM, protectedPathsFrom(ACCESS_CONTROL_LIST), CREDENTIALS_STORE);
         appHandler = new OptionsHandler(appHandler, ALLOWED_METHODS, DEFAULT_ACCESS);
