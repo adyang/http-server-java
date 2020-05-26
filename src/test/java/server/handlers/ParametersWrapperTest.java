@@ -31,8 +31,11 @@ class ParametersWrapperTest {
     @Test
     void formParameters() {
         Request request = new Request(Method.GET, "/any");
-        request.headers = Maps.of(Header.CONTENT_TYPE, ParametersWrapper.APPLICATION_FORM_URLENCODED);
-        request.body = readableByteChannelOf("keyOne=value+One%24&keyTwo=value-two");
+        String content = "keyOne=value+One%24&keyTwo=value-two";
+        request.headers = Maps.of(
+                Header.CONTENT_TYPE, ParametersWrapper.APPLICATION_FORM_URLENCODED,
+                Header.CONTENT_LENGTH, String.valueOf(content.length()));
+        request.body = readableByteChannelOf(content);
 
         wrapper.handle(request);
 
@@ -45,8 +48,11 @@ class ParametersWrapperTest {
     @Test
     void formParameters_noValue() {
         Request request = new Request(Method.GET, "/any");
-        request.headers = Maps.of(Header.CONTENT_TYPE, ParametersWrapper.APPLICATION_FORM_URLENCODED);
-        request.body = readableByteChannelOf("keyOne&keyTwo=value&keyThree=");
+        String content = "keyOne&keyTwo=value&keyThree=";
+        request.headers = Maps.of(
+                Header.CONTENT_TYPE, ParametersWrapper.APPLICATION_FORM_URLENCODED,
+                Header.CONTENT_LENGTH, String.valueOf(content.length()));
+        request.body = readableByteChannelOf(content);
 
         wrapper.handle(request);
 

@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ParametersWrapper implements Handler {
@@ -24,12 +25,18 @@ public class ParametersWrapper implements Handler {
     @Override
     public Response handle(Request request) {
         if (APPLICATION_FORM_URLENCODED.equals(request.headers.get(Header.CONTENT_TYPE))) {
-            String rawParams = ByteChannels.slurp(request.body);
+            long contentLength = parseContentLength(request.headers);
+            String rawParams = ByteChannels.slurp(ByteChannels.limit(request.body, contentLength));
             request.parameters = Arrays.stream(rawParams.split("&"))
                     .map(rp -> rp.split("="))
                     .collect(Collectors.toMap(p -> p[0], p -> p.length < 2 ? "" : decode(p[1])));
         }
         return handler.handle(request);
+    }
+
+    private static long parseContentLength(Map<String, String> headers) {
+        String contentLength = headers.getOrDefault(Header.CONTENT_LENGTH, "0");
+        return Long.parseLong(contentLength);
     }
 
     private String decode(String formEncodedStr) {
