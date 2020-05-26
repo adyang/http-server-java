@@ -4,6 +4,7 @@ import server.data.Method;
 import server.data.PatternHandler;
 import server.handlers.Authoriser;
 import server.handlers.BasicAuthenticator;
+import server.handlers.CatFormHandler;
 import server.handlers.DefaultResponseHeaderWrapper;
 import server.handlers.DeleteHandler;
 import server.handlers.Dispatcher;
@@ -21,6 +22,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -30,7 +32,9 @@ import static java.util.Collections.singletonList;
 public class Application {
     private static final Map<String, Map<String, List<Method>>> ACCESS_CONTROL_LIST = Maps.of(
             "admin", Maps.of("/logs", asList(Method.GET, Method.HEAD, Method.OPTIONS)),
-            "anonymous", Maps.of("/logs", emptyList()));
+            "anonymous", Maps.of(
+                    "/logs", emptyList(),
+                    "/cat-form", asList(Method.GET, Method.PUT, Method.POST, Method.DELETE)));
     private static final List<Method> DEFAULT_ACCESS = asList(Method.GET, Method.HEAD, Method.OPTIONS, Method.PUT, Method.DELETE);
     private static final String REALM = "default";
     private static final Map<String, String> CREDENTIALS_STORE = Maps.of("admin", "hunter2");
@@ -57,15 +61,22 @@ public class Application {
     }
 
     private static Map<Method, List<PatternHandler>> routes(Path directory) {
+        CatFormHandler catForm = new CatFormHandler(new AtomicReference<>());
         return Maps.of(
                 Method.HEAD, singletonList(new PatternHandler("*", new HeadHandler(directory))),
                 Method.GET, asList(
+                        new PatternHandler("/cat-form/data", catForm::get),
                         new PatternHandler("/redirect", new RedirectHandler("/")),
                         new PatternHandler("/coffee", TeapotHandler::handleCoffee),
                         new PatternHandler("/tea", TeapotHandler::handleTea),
                         new PatternHandler("*", new GetHandler(directory))),
-                Method.PUT, singletonList(new PatternHandler("*", new PutHandler(directory))),
-                Method.DELETE, singletonList(new PatternHandler("*", new DeleteHandler(directory)))
+                Method.PUT, asList(
+                        new PatternHandler("/cat-form/data", catForm::put),
+                        new PatternHandler("*", new PutHandler(directory))),
+                Method.POST, singletonList(new PatternHandler("/cat-form", catForm::post)),
+                Method.DELETE, asList(
+                        new PatternHandler("/cat-form/data", catForm::delete),
+                        new PatternHandler("*", new DeleteHandler(directory)))
         );
     }
 
