@@ -24,14 +24,29 @@ public class ParametersWrapper implements Handler {
 
     @Override
     public Response handle(Request request) {
-        if (APPLICATION_FORM_URLENCODED.equals(request.headers.get(Header.CONTENT_TYPE))) {
-            long contentLength = parseContentLength(request.headers);
-            String rawParams = ByteChannels.slurp(ByteChannels.limit(request.body, contentLength));
-            request.parameters = Arrays.stream(rawParams.split("&"))
-                    .map(rp -> rp.split("="))
-                    .collect(Collectors.toMap(p -> p[0], p -> p.length < 2 ? "" : decode(p[1])));
-        }
+        if (isUrlEncodedForm(request)) request.parameters = parseFormParameters(request);
+        if (hasQuery(request)) request.parameters = parseParameters(request.query);
         return handler.handle(request);
+    }
+
+    private boolean isUrlEncodedForm(Request request) {
+        return APPLICATION_FORM_URLENCODED.equals(request.headers.get(Header.CONTENT_TYPE));
+    }
+
+    private Map<String, String> parseFormParameters(Request request) {
+        long contentLength = parseContentLength(request.headers);
+        String rawParams = ByteChannels.slurp(ByteChannels.limit(request.body, contentLength));
+        return parseParameters(rawParams);
+    }
+
+    private boolean hasQuery(Request request) {
+        return request.query != null;
+    }
+
+    private Map<String, String> parseParameters(String rawParams) {
+        return Arrays.stream(rawParams.split("&"))
+                .map(rp -> rp.split("="))
+                .collect(Collectors.toMap(p -> p[0], p -> p.length < 2 ? "" : decode(p[1])));
     }
 
     private static long parseContentLength(Map<String, String> headers) {

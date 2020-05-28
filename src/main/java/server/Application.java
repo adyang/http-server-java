@@ -11,6 +11,7 @@ import server.handlers.Dispatcher;
 import server.handlers.GetHandler;
 import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
+import server.handlers.ParametersEchoHandler;
 import server.handlers.ParametersWrapper;
 import server.handlers.PutHandler;
 import server.handlers.RedirectHandler;
@@ -65,6 +66,7 @@ public class Application {
         return Maps.of(
                 Method.HEAD, singletonList(new PatternHandler("*", new HeadHandler(directory))),
                 Method.GET, asList(
+                        new PatternHandler("/parameters", ParametersEchoHandler::handle),
                         new PatternHandler("/cat-form/data", catForm::get),
                         new PatternHandler("/redirect", new RedirectHandler("/")),
                         new PatternHandler("/coffee", TeapotHandler::handleCoffee),

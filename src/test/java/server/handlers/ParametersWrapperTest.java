@@ -63,6 +63,31 @@ class ParametersWrapperTest {
         );
     }
 
+    @Test
+    void queryParameters() {
+        Request request = new Request(Method.GET, "/any", "keyOne=value+One%24&keyTwo=value-two");
+
+        wrapper.handle(request);
+
+        assertThat(handler.receivedRequest.parameters).containsOnly(
+                entry("keyOne", "value One$"),
+                entry("keyTwo", "value-two")
+        );
+    }
+
+    @Test
+    void queryParameters_noValue() {
+        Request request = new Request(Method.GET, "/any", "keyOne&keyTwo=value&keyThree=");
+
+        wrapper.handle(request);
+
+        assertThat(handler.receivedRequest.parameters).containsOnly(
+                entry("keyOne", ""),
+                entry("keyTwo", "value"),
+                entry("keyThree", "")
+        );
+    }
+
     private ReadableByteChannel readableByteChannelOf(String content) {
         return Channels.newChannel(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
     }
