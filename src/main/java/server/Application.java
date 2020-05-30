@@ -5,6 +5,7 @@ import server.data.PatternHandler;
 import server.handlers.Authoriser;
 import server.handlers.BasicAuthenticator;
 import server.handlers.CatFormHandler;
+import server.handlers.CookieHandler;
 import server.handlers.DefaultResponseHeaderWrapper;
 import server.handlers.DeleteHandler;
 import server.handlers.Dispatcher;
@@ -66,6 +67,8 @@ public class Application {
         return Maps.of(
                 Method.HEAD, singletonList(new PatternHandler("*", new HeadHandler(directory))),
                 Method.GET, asList(
+                        new PatternHandler("/cookie", CookieHandler::cookie),
+                        new PatternHandler("/eat_cookie", CookieHandler::eatCookie),
                         new PatternHandler("/parameters", ParametersEchoHandler::handle),
                         new PatternHandler("/cat-form/data", catForm::get),
                         new PatternHandler("/redirect", new RedirectHandler("/")),
