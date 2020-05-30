@@ -14,6 +14,7 @@ import server.handlers.HeadHandler;
 import server.handlers.OptionsHandler;
 import server.handlers.ParametersEchoHandler;
 import server.handlers.ParametersWrapper;
+import server.handlers.PatchHandler;
 import server.handlers.PutHandler;
 import server.handlers.RedirectHandler;
 import server.handlers.TeapotHandler;
@@ -37,7 +38,7 @@ public class Application {
             "anonymous", Maps.of(
                     "/logs", emptyList(),
                     "/cat-form", asList(Method.GET, Method.PUT, Method.POST, Method.DELETE)));
-    private static final List<Method> DEFAULT_ACCESS = asList(Method.GET, Method.HEAD, Method.OPTIONS, Method.PUT, Method.DELETE);
+    private static final List<Method> DEFAULT_ACCESS = asList(Method.GET, Method.HEAD, Method.OPTIONS, Method.PUT, Method.DELETE, Method.PATCH);
     private static final String REALM = "default";
     private static final Map<String, String> CREDENTIALS_STORE = Maps.of("admin", "hunter2");
     private static final Map<String, List<Method>> ALLOWED_METHODS = Maps.of(
@@ -81,7 +82,8 @@ public class Application {
                 Method.POST, singletonList(new PatternHandler("/cat-form", catForm::post)),
                 Method.DELETE, asList(
                         new PatternHandler("/cat-form/data", catForm::delete),
-                        new PatternHandler("*", new DeleteHandler(directory)))
+                        new PatternHandler("*", new DeleteHandler(directory))),
+                Method.PATCH, singletonList(new PatternHandler("*", new PatchHandler(directory)))
         );
     }
 

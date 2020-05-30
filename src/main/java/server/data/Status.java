@@ -3,6 +3,7 @@ package server.data;
 public enum Status {
     OK(200, "OK"),
     CREATED(201, "Created"),
+    NO_CONTENT(204, "No Content"),
     PARTIAL_CONTENT(206, "Partial Content"),
     FOUND(302, "Found"),
     BAD_REQUEST(400, "Bad Request"),
@@ -11,6 +12,7 @@ public enum Status {
     METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
     REQUEST_TIMEOUT(408, "Request Timeout"),
     CONFLICT(409, "Conflict"),
+    PRECONDITION_FAILED(412, "Precondition Failed"),
     REQUESTED_RANGE_NOT_SATISFIABLE(416, "Requested Range Not Satisfiable"),
     I_AM_A_TEAPOT(418, "I'm a teapot"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
