@@ -22,6 +22,8 @@ dependencies {
 
 application {
     mainClassName = 'server.Application'
+    if (project.hasProperty('logAppender'))
+        applicationDefaultJvmArgs = ["-DlogAppender=${project.logAppender}"]
 }
 
 test {
